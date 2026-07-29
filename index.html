@@ -141,6 +141,10 @@ details.notes .note-body{margin-top:6px; color:var(--ink-2); background:var(--ch
 .history .hdel{visibility:hidden}
 .history .hrow:hover .hdel{visibility:visible}
 .empty{color:var(--ink-muted); font-size:14px; padding:26px 0; text-align:center}
+.sitefoot{margin-top:44px; padding-top:14px; border-top:1px solid var(--grid); text-align:center; font-size:12.5px; color:var(--ink-muted)}
+.sitefoot a{color:var(--ink-2)}
+.kofi-nudge{display:block; margin-top:6px; font-size:13px}
+.kofi-nudge a{color:var(--ink-2)}
 /* All-problems view */
 .cat-block{margin-bottom:8px}
 .cat-head{
@@ -319,6 +323,7 @@ input[type=search]{flex:1; min-width:200px}
     <button data-tab="about">Method</button>
   </nav>
   <main id="view"></main>
+  <footer class="sitefoot">Free · no accounts · your data stays in your browser · <a href="https://ko-fi.com/adamtarantino" target="_blank" rel="noopener">☕ buy me a coffee</a></footer>
 </div>
 <div class="toast" id="toast"></div>
 <script>
@@ -1148,7 +1153,7 @@ function renderToday(){
 
   html += `<h2>Reviews due <span class="badge">${due.length}</span></h2>
   <p class="sub">Most overdue first. Try each one from a blank editor before peeking at your notes — the struggle is what builds retention.</p>`;
-  html += due.length ? due.map(x=>probCard(x.p,x.s,{due:true})).join('') : `<div class="empty">Review queue is clear 🎉 ${doneToday?`You've logged ${doneToday} attempt${doneToday>1?'s':''} today.`:'Pick up a new problem below.'}</div>`;
+  html += due.length ? due.map(x=>probCard(x.p,x.s,{due:true})).join('') : `<div class="empty">Review queue is clear 🎉 ${doneToday?`You've logged ${doneToday} attempt${doneToday>1?'s':''} today.`:'Pick up a new problem below.'}${doneToday?`<span class="kofi-nudge">If this trainer is working for you, <a href="https://ko-fi.com/adamtarantino" target="_blank" rel="noopener">buy me a coffee ☕</a></span>`:''}</div>`;
 
   html += `<h2>Up next — new problems</h2>`;
   if(gated){

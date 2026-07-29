@@ -1,0 +1,1577 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NeetCode 150 · Spaced Reps</title>
+<meta name="description" content="A spaced-repetition trainer for the NeetCode 150, built on spacing-effect and retrieval-practice research.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚡</text></svg>">
+<style>
+:root{
+  color-scheme: light;
+  --surface-1:#fcfcfb; --page:#f9f9f7;
+  --ink-1:#0b0b0b; --ink-2:#52514e; --ink-muted:#898781;
+  --grid:#e1e0d9; --baseline:#c3c2b7; --ring:rgba(11,11,11,0.10);
+  --blue:#2a78d6; --blue-soft:#cde2fb; --blue-mid:#86b6ef;
+  --seq-100:#cde2fb; --seq-200:#9ec5f4; --seq-350:#5598e7; --seq-500:#256abf; --seq-650:#104281;
+  --good:#0ca30c; --warning:#fab219; --serious:#ec835a; --critical:#d03b3b;
+  --good-text:#006300;
+  --chip-bg:#f0efec;
+}
+:root[data-theme="dark"]{
+  color-scheme: dark;
+  --surface-1:#1a1a19; --page:#0d0d0d;
+  --ink-1:#ffffff; --ink-2:#c3c2b7; --ink-muted:#898781;
+  --grid:#2c2c2a; --baseline:#383835; --ring:rgba(255,255,255,0.10);
+  --blue:#3987e5; --blue-soft:#184f95; --blue-mid:#1c5cab;
+  --seq-100:#0d366b; --seq-200:#104281; --seq-350:#1c5cab; --seq-500:#3987e5; --seq-650:#86b6ef;
+  --good:#0ca30c; --warning:#fab219; --serious:#ec835a; --critical:#d03b3b;
+  --good-text:#0ca30c;
+  --chip-bg:#262624;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme: dark;
+    --surface-1:#1a1a19; --page:#0d0d0d;
+    --ink-1:#ffffff; --ink-2:#c3c2b7; --ink-muted:#898781;
+    --grid:#2c2c2a; --baseline:#383835; --ring:rgba(255,255,255,0.10);
+    --blue:#3987e5; --blue-soft:#184f95; --blue-mid:#1c5cab;
+    --seq-100:#0d366b; --seq-200:#104281; --seq-350:#1c5cab; --seq-500:#3987e5; --seq-650:#86b6ef;
+    --good:#0ca30c; --warning:#fab219; --serious:#ec835a; --critical:#d03b3b;
+    --good-text:#0ca30c;
+    --chip-bg:#262624;
+  }
+}
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--page); color:var(--ink-1);
+  font-family:system-ui,-apple-system,"Segoe UI",sans-serif;
+  font-size:15px; line-height:1.5;
+}
+a{color:var(--blue); text-decoration:none}
+a:hover{text-decoration:underline}
+.wrap{max-width:880px; margin:0 auto; padding:0 16px 80px}
+header.site{
+  display:flex; align-items:center; gap:12px; padding:18px 0 10px; flex-wrap:wrap;
+}
+.logo{font-weight:700; font-size:19px; letter-spacing:-0.01em}
+.logo .accent{color:var(--blue)}
+.spacer{flex:1}
+.streak-chip{
+  display:inline-flex; align-items:center; gap:6px; padding:4px 10px; border-radius:999px;
+  background:var(--chip-bg); font-size:13px; color:var(--ink-2); font-weight:600;
+}
+.iconbtn{
+  border:1px solid var(--ring); background:var(--surface-1); color:var(--ink-2);
+  border-radius:8px; padding:5px 10px; font-size:13px; cursor:pointer; font-family:inherit;
+}
+.iconbtn:hover{color:var(--ink-1)}
+nav.tabs{
+  display:flex; gap:2px; border-bottom:1px solid var(--grid); margin-bottom:20px; overflow-x:auto;
+}
+nav.tabs button{
+  appearance:none; background:none; border:none; font-family:inherit; font-size:14px;
+  padding:9px 14px; cursor:pointer; color:var(--ink-2); border-bottom:2px solid transparent;
+  white-space:nowrap; font-weight:500;
+}
+nav.tabs button.active{color:var(--ink-1); border-bottom-color:var(--blue); font-weight:600}
+nav.tabs button .cnt{
+  display:inline-block; margin-left:6px; font-size:11px; font-weight:700; padding:1px 7px;
+  border-radius:999px; background:var(--chip-bg); color:var(--ink-2);
+}
+nav.tabs button .cnt.hot{background:var(--critical); color:#fff}
+h2{font-size:16px; margin:26px 0 10px}
+h2:first-child{margin-top:0}
+.sub{color:var(--ink-muted); font-size:13px; margin:-6px 0 14px}
+.card{
+  background:var(--surface-1); border:1px solid var(--ring); border-radius:12px;
+  padding:14px 16px; margin-bottom:10px;
+}
+.prob-head{display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; cursor:pointer}
+.prob-name{font-weight:600; font-size:15px}
+.prob-meta{color:var(--ink-muted); font-size:12.5px}
+.badge{
+  display:inline-block; font-size:11px; font-weight:700; padding:1px 8px; border-radius:999px;
+  background:var(--chip-bg); color:var(--ink-2); vertical-align:1px;
+}
+.badge.easy{color:var(--good-text)}
+.badge.medium{color:#946200}
+:root[data-theme="dark"] .badge.medium{color:var(--warning)}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) .badge.medium{color:var(--warning)} }
+.badge.hard{color:var(--critical)}
+.due-tag{font-size:12.5px; font-weight:600}
+.due-tag.overdue{color:var(--critical)}
+.due-tag.today{color:var(--ink-1)}
+.due-tag.later{color:var(--ink-muted); font-weight:500}
+.result-icon{font-size:12.5px; color:var(--ink-2)}
+.logform{margin-top:12px; padding-top:12px; border-top:1px solid var(--grid)}
+.result-btns{display:flex; gap:8px; flex-wrap:wrap}
+.rbtn{
+  flex:1; min-width:150px; text-align:left; border-radius:10px; padding:9px 12px; cursor:pointer;
+  border:1px solid var(--ring); background:var(--surface-1); font-family:inherit; color:var(--ink-1);
+}
+.rbtn:hover{border-color:var(--baseline)}
+.rbtn.selected{outline:2px solid var(--blue); outline-offset:-1px}
+.rbtn .rt{font-weight:700; font-size:13.5px; display:flex; gap:6px; align-items:center}
+.rbtn .rs{font-size:12px; color:var(--ink-muted); margin-top:2px}
+.dot{width:9px; height:9px; border-radius:50%; display:inline-block; flex:none}
+.dot.cold{background:var(--good)} .dot.hints{background:var(--warning)} .dot.video{background:var(--critical)}
+.dot.new{background:var(--blue)} .dot.scheduled{background:var(--baseline)} .dot.solid{background:var(--seq-650)}
+.formrow{display:flex; gap:10px; margin-top:10px; flex-wrap:wrap; align-items:flex-start}
+input[type=number], input[type=date], input[type=search], textarea{
+  font-family:inherit; font-size:14px; color:var(--ink-1); background:var(--page);
+  border:1px solid var(--ring); border-radius:8px; padding:7px 10px;
+}
+input[type=number]{width:90px}
+textarea{flex:1; min-width:220px; min-height:38px; resize:vertical}
+.primary{
+  background:var(--blue); color:#fff; border:none; border-radius:8px; padding:8px 16px;
+  font-family:inherit; font-size:14px; font-weight:600; cursor:pointer;
+}
+.primary:disabled{opacity:.45; cursor:default}
+.ghost{background:none; border:none; color:var(--ink-muted); font-family:inherit; font-size:13px; cursor:pointer; padding:6px 8px}
+.ghost:hover{color:var(--ink-1)}
+details.notes{margin-top:10px; font-size:13.5px}
+details.notes summary{cursor:pointer; color:var(--ink-muted); font-size:12.5px; user-select:none}
+details.notes .note-body{margin-top:6px; color:var(--ink-2); background:var(--chip-bg); border-radius:8px; padding:8px 10px; white-space:pre-wrap}
+.history{margin-top:8px; font-size:12.5px; color:var(--ink-2)}
+.history .hrow{display:flex; gap:8px; align-items:center; padding:3px 0}
+.history .hdate{color:var(--ink-muted); font-variant-numeric:tabular-nums; width:84px; flex:none}
+.history .hnote{color:var(--ink-muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1}
+.history .hdel{visibility:hidden}
+.history .hrow:hover .hdel{visibility:visible}
+.empty{color:var(--ink-muted); font-size:14px; padding:26px 0; text-align:center}
+/* All-problems view */
+.cat-block{margin-bottom:8px}
+.cat-head{
+  display:flex; align-items:center; gap:10px; cursor:pointer; padding:10px 4px;
+  border-bottom:1px solid var(--grid); user-select:none;
+}
+.cat-head .cat-name{font-weight:600; font-size:14.5px; flex:1}
+.cat-mini{width:120px; height:6px; background:var(--chip-bg); border-radius:3px; overflow:hidden; flex:none}
+.cat-mini i{display:block; height:100%; background:var(--blue); border-radius:3px}
+.cat-count{font-size:12px; color:var(--ink-muted); width:52px; text-align:right; font-variant-numeric:tabular-nums}
+.chev{color:var(--ink-muted); font-size:11px; width:12px}
+table.plist{width:100%; border-collapse:collapse; font-size:13.5px}
+table.plist td{padding:7px 6px; border-bottom:1px solid var(--grid); vertical-align:middle}
+table.plist tr:hover td{background:var(--chip-bg)}
+table.plist tr{cursor:pointer}
+td.c-dot{width:18px}
+td.c-diff{width:70px}
+td.c-due{width:110px; text-align:right; font-variant-numeric:tabular-nums; color:var(--ink-muted); font-size:12.5px}
+td.c-n{width:36px; text-align:right; color:var(--ink-muted); font-variant-numeric:tabular-nums; font-size:12.5px}
+.searchrow{display:flex; gap:10px; margin-bottom:14px; align-items:center; flex-wrap:wrap}
+input[type=search]{flex:1; min-width:200px}
+.filterchips{display:flex; gap:6px}
+.fchip{font-size:12.5px; padding:4px 10px; border-radius:999px; border:1px solid var(--ring); background:none; color:var(--ink-2); cursor:pointer; font-family:inherit}
+.fchip.on{background:var(--chip-bg); color:var(--ink-1); font-weight:600}
+/* Stats */
+.tiles{display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:10px; margin-bottom:24px}
+.tile{background:var(--surface-1); border:1px solid var(--ring); border-radius:12px; padding:12px 14px}
+.tile .tv{font-size:26px; font-weight:700; letter-spacing:-0.02em}
+.tile .tv small{font-size:14px; color:var(--ink-muted); font-weight:500}
+.tile .tl{font-size:12px; color:var(--ink-muted); margin-top:2px}
+.bars{margin-bottom:26px}
+.brow{display:flex; align-items:center; gap:10px; margin-bottom:7px}
+.brow .bl{width:170px; flex:none; font-size:12.5px; color:var(--ink-2); text-align:right; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.brow .btrack{flex:1; height:14px; background:var(--chip-bg); border-radius:4px; position:relative; overflow:hidden}
+.brow .bfill{position:absolute; inset:0 auto 0 0; background:var(--seq-350); border-radius:4px 4px 4px 4px}
+.brow .bfill.solidpart{background:var(--seq-650)}
+.brow .bv{width:56px; flex:none; font-size:12px; color:var(--ink-muted); font-variant-numeric:tabular-nums}
+.legend{display:flex; gap:16px; font-size:12px; color:var(--ink-2); margin:4px 0 12px}
+.legend .li{display:inline-flex; align-items:center; gap:6px}
+.legend .sw{width:10px; height:10px; border-radius:3px; display:inline-block}
+/* heatmap */
+.heat{display:grid; grid-auto-flow:column; grid-template-rows:repeat(7,14px); gap:3px; margin:8px 0 4px; width:max-content}
+.hcell{width:14px; height:14px; border-radius:3px; background:var(--chip-bg)}
+.heat-legend{display:flex; align-items:center; gap:4px; font-size:11.5px; color:var(--ink-muted); margin-bottom:8px}
+.heat-legend .hcell{width:11px;height:11px}
+/* About */
+.prose{max-width:660px; font-size:14.5px; color:var(--ink-2)}
+.prose h3{color:var(--ink-1); font-size:14.5px; margin:22px 0 6px}
+.prose p{margin:0 0 12px}
+.prose .refs{font-size:12.5px; color:var(--ink-muted); border-top:1px solid var(--grid); padding-top:12px; margin-top:20px}
+.sched-table{border-collapse:collapse; font-size:13px; margin:8px 0 14px}
+.sched-table td,.sched-table th{border:1px solid var(--grid); padding:6px 12px; text-align:left}
+.sched-table th{font-weight:600; color:var(--ink-1); background:var(--chip-bg)}
+/* leeches */
+.card.leech{border-color:var(--serious); background:linear-gradient(0deg,var(--surface-1),var(--surface-1))}
+.leech-tag{font-size:11px; font-weight:700; padding:1px 8px; border-radius:999px; background:var(--serious); color:#fff}
+.leech-box{margin-top:10px; padding:10px 12px; border-radius:9px; background:var(--chip-bg); font-size:13px; color:var(--ink-2)}
+.leech-box strong{color:var(--ink-1)}
+.leech-box .recall{margin-top:8px}
+.leech-box textarea{width:100%; min-width:0}
+/* new-problem gate */
+.gate{
+  background:var(--surface-1); border:1px dashed var(--baseline); border-radius:12px;
+  padding:18px 20px; text-align:center; color:var(--ink-2); font-size:14px;
+}
+.gate strong{color:var(--ink-1)}
+.gate .gsub{font-size:12.5px; color:var(--ink-muted); margin-top:6px}
+.gate button{margin-top:10px}
+/* skip + hints on new problems */
+.skipbtn{font-size:12px; color:var(--ink-muted); background:none; border:none; cursor:pointer; font-family:inherit; padding:2px 6px}
+.skipbtn:hover{color:var(--critical)}
+.newpat{font-size:12px; color:var(--blue); font-weight:600}
+.transfer{
+  margin-top:10px; padding:10px 12px; border-left:3px solid var(--blue); background:var(--chip-bg);
+  border-radius:0 9px 9px 0; font-size:13px; color:var(--ink-2);
+}
+.transfer strong{color:var(--ink-1)}
+.transfer .card{margin:10px 0 0; background:var(--page)}
+.linkbtn{background:none; border:none; color:var(--blue); font-family:inherit; font-size:13px; cursor:pointer; padding:0; font-weight:600}
+.linkbtn:hover{text-decoration:underline}
+.xfer-note{display:flex; gap:7px; align-items:flex-start; margin-top:10px; font-size:12.5px; color:var(--ink-2)}
+/* sync */
+.syncbar{
+  background:var(--surface-1); border:1px solid var(--ring); border-radius:12px;
+  padding:12px 16px; margin-bottom:14px; font-size:13.5px; color:var(--ink-2);
+}
+.syncbar .srow{display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-top:8px}
+.syncbar input[type=text]{
+  flex:1; min-width:200px; font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-size:12px;
+  color:var(--ink-2); background:var(--page); border:1px solid var(--ring); border-radius:8px; padding:7px 10px;
+}
+.syncbar strong{color:var(--ink-1)}
+/* ---- katas ---- */
+.kata .prob-head{cursor:pointer}
+.kq{font-weight:600; font-size:15px}
+.klang{font-size:11px; font-weight:700; padding:1px 8px; border-radius:999px; background:var(--blue-soft); color:var(--seq-650)}
+:root[data-theme="dark"] .klang{color:var(--ink-1)}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) .klang{color:var(--ink-1)} }
+.kdraft{font-size:11px; font-weight:700; padding:1px 8px; border-radius:999px; background:var(--warning); color:#3a2a00}
+.kbody{margin-top:12px; padding-top:12px; border-top:1px solid var(--grid)}
+.editor{
+  width:100%; min-height:120px; font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  font-size:13px; line-height:1.55; tab-size:2; white-space:pre; overflow-wrap:normal; overflow-x:auto;
+  background:var(--page); color:var(--ink-1); border:1px solid var(--ring); border-radius:9px; padding:10px 12px;
+}
+.editor:focus{outline:2px solid var(--blue); outline-offset:-1px}
+.medwrap{position:relative}
+.med{
+  height:190px; min-height:120px; border:1px solid var(--ring); border-radius:9px; overflow:hidden;
+  resize:vertical; background:var(--page);
+}
+.med .monaco-editor, .med .monaco-editor .margin, .med .monaco-editor-background{background:transparent}
+.reveal pre .mtk1{color:var(--ink-1)}
+.runrow{display:flex; gap:8px; align-items:center; margin-top:9px; flex-wrap:wrap}
+.runrow .hint{font-size:12px; color:var(--ink-muted)}
+.out{
+  margin-top:9px; font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-size:12.5px;
+  background:var(--chip-bg); border-radius:9px; padding:9px 12px; white-space:pre-wrap; color:var(--ink-2);
+  max-height:220px; overflow:auto;
+}
+.out.pass{border-left:3px solid var(--good)}
+.out.fail{border-left:3px solid var(--critical)}
+.out .ok{color:var(--good-text); font-weight:700}
+.out .err{color:var(--critical); font-weight:700}
+.out table{border-collapse:collapse; font-size:12px}
+.out td,.out th{border:1px solid var(--grid); padding:3px 8px; text-align:left}
+.reveal{margin-top:10px}
+.reveal pre{
+  margin:0; font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-size:12.5px;
+  background:var(--chip-bg); border-radius:9px; padding:10px 12px; overflow-x:auto; color:var(--ink-1);
+}
+.kgrade{display:flex; gap:8px; margin-top:10px; flex-wrap:wrap}
+.kaddform{background:var(--surface-1); border:1px solid var(--ring); border-radius:12px; padding:14px 16px; margin-bottom:16px}
+.kaddform .frow{display:flex; gap:10px; margin-bottom:9px; flex-wrap:wrap}
+.kaddform input[type=text], .kaddform select{
+  font-family:inherit; font-size:14px; color:var(--ink-1); background:var(--page);
+  border:1px solid var(--ring); border-radius:8px; padding:7px 10px;
+}
+.kaddform input[type=text]{flex:1; min-width:220px}
+.kcapture{margin-top:10px; padding-top:10px; border-top:1px dashed var(--grid)}
+.kcapture label{font-size:12.5px; color:var(--ink-muted); display:block; margin-bottom:5px}
+.kcapture .frow{display:flex; gap:8px; flex-wrap:wrap}
+.kcapture input[type=text]{
+  flex:1; min-width:200px; font-family:inherit; font-size:13.5px; color:var(--ink-1);
+  background:var(--page); border:1px solid var(--ring); border-radius:8px; padding:7px 10px;
+}
+.kcapture select{font-family:inherit; font-size:13.5px; background:var(--page); color:var(--ink-1); border:1px solid var(--ring); border-radius:8px; padding:7px 10px}
+.toast{
+  position:fixed; bottom:22px; left:50%; transform:translateX(-50%);
+  background:var(--ink-1); color:var(--page); padding:9px 18px; border-radius:10px; font-size:13.5px;
+  opacity:0; transition:opacity .25s; pointer-events:none; z-index:50; font-weight:600;
+}
+.toast.show{opacity:1}
+.newlist .card{padding:10px 16px}
+@media (max-width:560px){ .brow .bl{width:110px} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="site">
+    <div class="logo">NeetCode 150 <span class="accent">· Spaced Reps</span></div>
+    <div class="spacer"></div>
+    <span class="streak-chip" id="streakChip" title="Consecutive days with at least one logged attempt">🔥 <span id="streakVal">0</span>d</span>
+    <button class="iconbtn" id="syncBtn" title="Set up cross-device sync">Sync</button>
+    <button class="iconbtn" id="themeBtn" title="Toggle light/dark">◐</button>
+    <button class="iconbtn" id="exportBtn" title="Download your log as JSON">Export</button>
+    <button class="iconbtn" id="importBtn" title="Restore a log from JSON">Import</button>
+    <input type="file" id="importFile" accept=".json" style="display:none">
+  </header>
+  <div id="syncbar" class="syncbar" style="display:none"></div>
+  <nav class="tabs" id="tabs">
+    <button data-tab="today" class="active">Today <span class="cnt" id="dueCnt">0</span></button>
+    <button data-tab="katas">Katas <span class="cnt" id="kataCnt">0</span></button>
+    <button data-tab="all">All problems</button>
+    <button data-tab="stats">Stats</button>
+    <button data-tab="about">Method</button>
+  </nav>
+  <main id="view"></main>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+const PROBLEMS = [{"id":1,"name":"Contains Duplicate","cat":"Arrays & Hashing","diff":"Easy","lc":"https://leetcode.com/problems/contains-duplicate/","nc":"https://neetcode.io/problems/duplicate-integer?list=neetcode150"},{"id":2,"name":"Valid Anagram","cat":"Arrays & Hashing","diff":"Easy","lc":"https://leetcode.com/problems/valid-anagram/","nc":"https://neetcode.io/problems/is-anagram?list=neetcode150"},{"id":3,"name":"Two Sum","cat":"Arrays & Hashing","diff":"Easy","lc":"https://leetcode.com/problems/two-sum/","nc":"https://neetcode.io/problems/two-integer-sum?list=neetcode150"},{"id":4,"name":"Group Anagrams","cat":"Arrays & Hashing","diff":"Medium","lc":"https://leetcode.com/problems/group-anagrams/","nc":"https://neetcode.io/problems/anagram-groups?list=neetcode150"},{"id":5,"name":"Top K Frequent Elements","cat":"Arrays & Hashing","diff":"Medium","lc":"https://leetcode.com/problems/top-k-frequent-elements/","nc":"https://neetcode.io/problems/top-k-elements-in-list?list=neetcode150"},{"id":6,"name":"Encode and Decode Strings","cat":"Arrays & Hashing","diff":"Medium","lc":"https://leetcode.com/problems/encode-and-decode-strings/","nc":"https://neetcode.io/problems/string-encode-and-decode?list=neetcode150"},{"id":7,"name":"Product of Array Except Self","cat":"Arrays & Hashing","diff":"Medium","lc":"https://leetcode.com/problems/product-of-array-except-self/","nc":"https://neetcode.io/problems/products-of-array-discluding-self?list=neetcode150"},{"id":8,"name":"Valid Sudoku","cat":"Arrays & Hashing","diff":"Medium","lc":"https://leetcode.com/problems/valid-sudoku/","nc":"https://neetcode.io/problems/valid-sudoku?list=neetcode150"},{"id":9,"name":"Longest Consecutive Sequence","cat":"Arrays & Hashing","diff":"Medium","lc":"https://leetcode.com/problems/longest-consecutive-sequence/","nc":"https://neetcode.io/problems/longest-consecutive-sequence?list=neetcode150"},{"id":10,"name":"Valid Palindrome","cat":"Two Pointers","diff":"Easy","lc":"https://leetcode.com/problems/valid-palindrome/","nc":"https://neetcode.io/problems/is-palindrome?list=neetcode150"},{"id":11,"name":"Two Sum II Input Array Is Sorted","cat":"Two Pointers","diff":"Medium","lc":"https://leetcode.com/problems/two-sum-ii-input-array-is-sorted/","nc":"https://neetcode.io/problems/two-integer-sum-ii?list=neetcode150"},{"id":12,"name":"3Sum","cat":"Two Pointers","diff":"Medium","lc":"https://leetcode.com/problems/3sum/","nc":"https://neetcode.io/problems/three-integer-sum?list=neetcode150"},{"id":13,"name":"Container With Most Water","cat":"Two Pointers","diff":"Medium","lc":"https://leetcode.com/problems/container-with-most-water/","nc":"https://neetcode.io/problems/max-water-container?list=neetcode150"},{"id":14,"name":"Trapping Rain Water","cat":"Two Pointers","diff":"Hard","lc":"https://leetcode.com/problems/trapping-rain-water/","nc":"https://neetcode.io/problems/trapping-rain-water?list=neetcode150"},{"id":15,"name":"Best Time to Buy And Sell Stock","cat":"Sliding Window","diff":"Easy","lc":"https://leetcode.com/problems/best-time-to-buy-and-sell-stock/","nc":"https://neetcode.io/problems/buy-and-sell-crypto?list=neetcode150"},{"id":16,"name":"Longest Substring Without Repeating Characters","cat":"Sliding Window","diff":"Medium","lc":"https://leetcode.com/problems/longest-substring-without-repeating-characters/","nc":"https://neetcode.io/problems/longest-substring-without-duplicates?list=neetcode150"},{"id":17,"name":"Longest Repeating Character Replacement","cat":"Sliding Window","diff":"Medium","lc":"https://leetcode.com/problems/longest-repeating-character-replacement/","nc":"https://neetcode.io/problems/longest-repeating-substring-with-replacement?list=neetcode150"},{"id":18,"name":"Permutation In String","cat":"Sliding Window","diff":"Medium","lc":"https://leetcode.com/problems/permutation-in-string/","nc":"https://neetcode.io/problems/permutation-string?list=neetcode150"},{"id":19,"name":"Minimum Window Substring","cat":"Sliding Window","diff":"Hard","lc":"https://leetcode.com/problems/minimum-window-substring/","nc":"https://neetcode.io/problems/minimum-window-with-characters?list=neetcode150"},{"id":20,"name":"Sliding Window Maximum","cat":"Sliding Window","diff":"Hard","lc":"https://leetcode.com/problems/sliding-window-maximum/","nc":"https://neetcode.io/problems/sliding-window-maximum?list=neetcode150"},{"id":21,"name":"Valid Parentheses","cat":"Stack","diff":"Easy","lc":"https://leetcode.com/problems/valid-parentheses/","nc":"https://neetcode.io/problems/validate-parentheses?list=neetcode150"},{"id":22,"name":"Min Stack","cat":"Stack","diff":"Medium","lc":"https://leetcode.com/problems/min-stack/","nc":"https://neetcode.io/problems/minimum-stack?list=neetcode150"},{"id":23,"name":"Evaluate Reverse Polish Notation","cat":"Stack","diff":"Medium","lc":"https://leetcode.com/problems/evaluate-reverse-polish-notation/","nc":"https://neetcode.io/problems/evaluate-reverse-polish-notation?list=neetcode150"},{"id":24,"name":"Daily Temperatures","cat":"Stack","diff":"Medium","lc":"https://leetcode.com/problems/daily-temperatures/","nc":"https://neetcode.io/problems/daily-temperatures?list=neetcode150"},{"id":25,"name":"Car Fleet","cat":"Stack","diff":"Medium","lc":"https://leetcode.com/problems/car-fleet/","nc":"https://neetcode.io/problems/car-fleet?list=neetcode150"},{"id":26,"name":"Largest Rectangle In Histogram","cat":"Stack","diff":"Hard","lc":"https://leetcode.com/problems/largest-rectangle-in-histogram/","nc":"https://neetcode.io/problems/largest-rectangle-in-histogram?list=neetcode150"},{"id":27,"name":"Binary Search","cat":"Binary Search","diff":"Easy","lc":"https://leetcode.com/problems/binary-search/","nc":"https://neetcode.io/problems/binary-search?list=neetcode150"},{"id":28,"name":"Search a 2D Matrix","cat":"Binary Search","diff":"Medium","lc":"https://leetcode.com/problems/search-a-2d-matrix/","nc":"https://neetcode.io/problems/search-2d-matrix?list=neetcode150"},{"id":29,"name":"Koko Eating Bananas","cat":"Binary Search","diff":"Medium","lc":"https://leetcode.com/problems/koko-eating-bananas/","nc":"https://neetcode.io/problems/eating-bananas?list=neetcode150"},{"id":30,"name":"Find Minimum In Rotated Sorted Array","cat":"Binary Search","diff":"Medium","lc":"https://leetcode.com/problems/find-minimum-in-rotated-sorted-array/","nc":"https://neetcode.io/problems/find-minimum-in-rotated-sorted-array?list=neetcode150"},{"id":31,"name":"Search In Rotated Sorted Array","cat":"Binary Search","diff":"Medium","lc":"https://leetcode.com/problems/search-in-rotated-sorted-array/","nc":"https://neetcode.io/problems/find-target-in-rotated-sorted-array?list=neetcode150"},{"id":32,"name":"Time Based Key Value Store","cat":"Binary Search","diff":"Medium","lc":"https://leetcode.com/problems/time-based-key-value-store/","nc":"https://neetcode.io/problems/time-based-key-value-store?list=neetcode150"},{"id":33,"name":"Median of Two Sorted Arrays","cat":"Binary Search","diff":"Hard","lc":"https://leetcode.com/problems/median-of-two-sorted-arrays/","nc":"https://neetcode.io/problems/median-of-two-sorted-arrays?list=neetcode150"},{"id":34,"name":"Reverse Linked List","cat":"Linked List","diff":"Easy","lc":"https://leetcode.com/problems/reverse-linked-list/","nc":"https://neetcode.io/problems/reverse-a-linked-list?list=neetcode150"},{"id":35,"name":"Merge Two Sorted Lists","cat":"Linked List","diff":"Easy","lc":"https://leetcode.com/problems/merge-two-sorted-lists/","nc":"https://neetcode.io/problems/merge-two-sorted-linked-lists?list=neetcode150"},{"id":36,"name":"Linked List Cycle","cat":"Linked List","diff":"Easy","lc":"https://leetcode.com/problems/linked-list-cycle/","nc":"https://neetcode.io/problems/linked-list-cycle-detection?list=neetcode150"},{"id":37,"name":"Reorder List","cat":"Linked List","diff":"Medium","lc":"https://leetcode.com/problems/reorder-list/","nc":"https://neetcode.io/problems/reorder-linked-list?list=neetcode150"},{"id":38,"name":"Remove Nth Node From End of List","cat":"Linked List","diff":"Medium","lc":"https://leetcode.com/problems/remove-nth-node-from-end-of-list/","nc":"https://neetcode.io/problems/remove-node-from-end-of-linked-list?list=neetcode150"},{"id":39,"name":"Copy List With Random Pointer","cat":"Linked List","diff":"Medium","lc":"https://leetcode.com/problems/copy-list-with-random-pointer/","nc":"https://neetcode.io/problems/copy-linked-list-with-random-pointer?list=neetcode150"},{"id":40,"name":"Add Two Numbers","cat":"Linked List","diff":"Medium","lc":"https://leetcode.com/problems/add-two-numbers/","nc":"https://neetcode.io/problems/add-two-numbers?list=neetcode150"},{"id":41,"name":"Find The Duplicate Number","cat":"Linked List","diff":"Medium","lc":"https://leetcode.com/problems/find-the-duplicate-number/","nc":"https://neetcode.io/problems/find-duplicate-integer?list=neetcode150"},{"id":42,"name":"LRU Cache","cat":"Linked List","diff":"Medium","lc":"https://leetcode.com/problems/lru-cache/","nc":"https://neetcode.io/problems/lru-cache?list=neetcode150"},{"id":43,"name":"Merge K Sorted Lists","cat":"Linked List","diff":"Hard","lc":"https://leetcode.com/problems/merge-k-sorted-lists/","nc":"https://neetcode.io/problems/merge-k-sorted-linked-lists?list=neetcode150"},{"id":44,"name":"Reverse Nodes In K Group","cat":"Linked List","diff":"Hard","lc":"https://leetcode.com/problems/reverse-nodes-in-k-group/","nc":"https://neetcode.io/problems/reverse-nodes-in-k-group?list=neetcode150"},{"id":45,"name":"Invert Binary Tree","cat":"Trees","diff":"Easy","lc":"https://leetcode.com/problems/invert-binary-tree/","nc":"https://neetcode.io/problems/invert-a-binary-tree?list=neetcode150"},{"id":46,"name":"Maximum Depth of Binary Tree","cat":"Trees","diff":"Easy","lc":"https://leetcode.com/problems/maximum-depth-of-binary-tree/","nc":"https://neetcode.io/problems/depth-of-binary-tree?list=neetcode150"},{"id":47,"name":"Diameter of Binary Tree","cat":"Trees","diff":"Easy","lc":"https://leetcode.com/problems/diameter-of-binary-tree/","nc":"https://neetcode.io/problems/binary-tree-diameter?list=neetcode150"},{"id":48,"name":"Balanced Binary Tree","cat":"Trees","diff":"Easy","lc":"https://leetcode.com/problems/balanced-binary-tree/","nc":"https://neetcode.io/problems/balanced-binary-tree?list=neetcode150"},{"id":49,"name":"Same Tree","cat":"Trees","diff":"Easy","lc":"https://leetcode.com/problems/same-tree/","nc":"https://neetcode.io/problems/same-binary-tree?list=neetcode150"},{"id":50,"name":"Subtree of Another Tree","cat":"Trees","diff":"Easy","lc":"https://leetcode.com/problems/subtree-of-another-tree/","nc":"https://neetcode.io/problems/subtree-of-a-binary-tree?list=neetcode150"},{"id":51,"name":"Lowest Common Ancestor of a Binary Search Tree","cat":"Trees","diff":"Medium","lc":"https://leetcode.com/problems/lowest-common-ancestor-of-a-binary-search-tree/","nc":"https://neetcode.io/problems/lowest-common-ancestor-in-binary-search-tree?list=neetcode150"},{"id":52,"name":"Binary Tree Level Order Traversal","cat":"Trees","diff":"Medium","lc":"https://leetcode.com/problems/binary-tree-level-order-traversal/","nc":"https://neetcode.io/problems/level-order-traversal-of-binary-tree?list=neetcode150"},{"id":53,"name":"Binary Tree Right Side View","cat":"Trees","diff":"Medium","lc":"https://leetcode.com/problems/binary-tree-right-side-view/","nc":"https://neetcode.io/problems/binary-tree-right-side-view?list=neetcode150"},{"id":54,"name":"Count Good Nodes In Binary Tree","cat":"Trees","diff":"Medium","lc":"https://leetcode.com/problems/count-good-nodes-in-binary-tree/","nc":"https://neetcode.io/problems/count-good-nodes-in-binary-tree?list=neetcode150"},{"id":55,"name":"Validate Binary Search Tree","cat":"Trees","diff":"Medium","lc":"https://leetcode.com/problems/validate-binary-search-tree/","nc":"https://neetcode.io/problems/valid-binary-search-tree?list=neetcode150"},{"id":56,"name":"Kth Smallest Element In a Bst","cat":"Trees","diff":"Medium","lc":"https://leetcode.com/problems/kth-smallest-element-in-a-bst/","nc":"https://neetcode.io/problems/kth-smallest-integer-in-bst?list=neetcode150"},{"id":57,"name":"Construct Binary Tree From Preorder And Inorder Traversal","cat":"Trees","diff":"Medium","lc":"https://leetcode.com/problems/construct-binary-tree-from-preorder-and-inorder-traversal/","nc":"https://neetcode.io/problems/binary-tree-from-preorder-and-inorder-traversal?list=neetcode150"},{"id":58,"name":"Binary Tree Maximum Path Sum","cat":"Trees","diff":"Hard","lc":"https://leetcode.com/problems/binary-tree-maximum-path-sum/","nc":"https://neetcode.io/problems/binary-tree-maximum-path-sum?list=neetcode150"},{"id":59,"name":"Serialize And Deserialize Binary Tree","cat":"Trees","diff":"Hard","lc":"https://leetcode.com/problems/serialize-and-deserialize-binary-tree/","nc":"https://neetcode.io/problems/serialize-and-deserialize-binary-tree?list=neetcode150"},{"id":60,"name":"Kth Largest Element In a Stream","cat":"Heap / Priority Queue","diff":"Easy","lc":"https://leetcode.com/problems/kth-largest-element-in-a-stream/","nc":"https://neetcode.io/problems/kth-largest-integer-in-a-stream?list=neetcode150"},{"id":61,"name":"Last Stone Weight","cat":"Heap / Priority Queue","diff":"Easy","lc":"https://leetcode.com/problems/last-stone-weight/","nc":"https://neetcode.io/problems/last-stone-weight?list=neetcode150"},{"id":62,"name":"K Closest Points to Origin","cat":"Heap / Priority Queue","diff":"Medium","lc":"https://leetcode.com/problems/k-closest-points-to-origin/","nc":"https://neetcode.io/problems/k-closest-points-to-origin?list=neetcode150"},{"id":63,"name":"Kth Largest Element In An Array","cat":"Heap / Priority Queue","diff":"Medium","lc":"https://leetcode.com/problems/kth-largest-element-in-an-array/","nc":"https://neetcode.io/problems/kth-largest-element-in-an-array?list=neetcode150"},{"id":64,"name":"Task Scheduler","cat":"Heap / Priority Queue","diff":"Medium","lc":"https://leetcode.com/problems/task-scheduler/","nc":"https://neetcode.io/problems/task-scheduling?list=neetcode150"},{"id":65,"name":"Design Twitter","cat":"Heap / Priority Queue","diff":"Medium","lc":"https://leetcode.com/problems/design-twitter/","nc":"https://neetcode.io/problems/design-twitter-feed?list=neetcode150"},{"id":66,"name":"Find Median From Data Stream","cat":"Heap / Priority Queue","diff":"Hard","lc":"https://leetcode.com/problems/find-median-from-data-stream/","nc":"https://neetcode.io/problems/find-median-in-a-data-stream?list=neetcode150"},{"id":67,"name":"Subsets","cat":"Backtracking","diff":"Medium","lc":"https://leetcode.com/problems/subsets/","nc":"https://neetcode.io/problems/subsets?list=neetcode150"},{"id":68,"name":"Combination Sum","cat":"Backtracking","diff":"Medium","lc":"https://leetcode.com/problems/combination-sum/","nc":"https://neetcode.io/problems/combination-target-sum?list=neetcode150"},{"id":69,"name":"Combination Sum II","cat":"Backtracking","diff":"Medium","lc":"https://leetcode.com/problems/combination-sum-ii/","nc":"https://neetcode.io/problems/combination-target-sum-ii?list=neetcode150"},{"id":70,"name":"Permutations","cat":"Backtracking","diff":"Medium","lc":"https://leetcode.com/problems/permutations/","nc":"https://neetcode.io/problems/permutations?list=neetcode150"},{"id":71,"name":"Subsets II","cat":"Backtracking","diff":"Medium","lc":"https://leetcode.com/problems/subsets-ii/","nc":"https://neetcode.io/problems/subsets-ii?list=neetcode150"},{"id":72,"name":"Generate Parentheses","cat":"Backtracking","diff":"Medium","lc":"https://leetcode.com/problems/generate-parentheses/","nc":"https://neetcode.io/problems/generate-parentheses?list=neetcode150"},{"id":73,"name":"Word Search","cat":"Backtracking","diff":"Medium","lc":"https://leetcode.com/problems/word-search/","nc":"https://neetcode.io/problems/search-for-word?list=neetcode150"},{"id":74,"name":"Palindrome Partitioning","cat":"Backtracking","diff":"Medium","lc":"https://leetcode.com/problems/palindrome-partitioning/","nc":"https://neetcode.io/problems/palindrome-partitioning?list=neetcode150"},{"id":75,"name":"Letter Combinations of a Phone Number","cat":"Backtracking","diff":"Medium","lc":"https://leetcode.com/problems/letter-combinations-of-a-phone-number/","nc":"https://neetcode.io/problems/combinations-of-a-phone-number?list=neetcode150"},{"id":76,"name":"N Queens","cat":"Backtracking","diff":"Hard","lc":"https://leetcode.com/problems/n-queens/","nc":"https://neetcode.io/problems/n-queens?list=neetcode150"},{"id":77,"name":"Implement Trie Prefix Tree","cat":"Tries","diff":"Medium","lc":"https://leetcode.com/problems/implement-trie-prefix-tree/","nc":"https://neetcode.io/problems/implement-prefix-tree?list=neetcode150"},{"id":78,"name":"Design Add And Search Words Data Structure","cat":"Tries","diff":"Medium","lc":"https://leetcode.com/problems/design-add-and-search-words-data-structure/","nc":"https://neetcode.io/problems/design-word-search-data-structure?list=neetcode150"},{"id":79,"name":"Word Search II","cat":"Tries","diff":"Hard","lc":"https://leetcode.com/problems/word-search-ii/","nc":"https://neetcode.io/problems/search-for-word-ii?list=neetcode150"},{"id":80,"name":"Number of Islands","cat":"Graphs","diff":"Medium","lc":"https://leetcode.com/problems/number-of-islands/","nc":"https://neetcode.io/problems/count-number-of-islands?list=neetcode150"},{"id":81,"name":"Max Area of Island","cat":"Graphs","diff":"Medium","lc":"https://leetcode.com/problems/max-area-of-island/","nc":"https://neetcode.io/problems/max-area-of-island?list=neetcode150"},{"id":82,"name":"Clone Graph","cat":"Graphs","diff":"Medium","lc":"https://leetcode.com/problems/clone-graph/","nc":"https://neetcode.io/problems/clone-graph?list=neetcode150"},{"id":83,"name":"Walls And Gates","cat":"Graphs","diff":"Medium","lc":"https://leetcode.com/problems/walls-and-gates/","nc":"https://neetcode.io/problems/islands-and-treasure?list=neetcode150"},{"id":84,"name":"Rotting Oranges","cat":"Graphs","diff":"Medium","lc":"https://leetcode.com/problems/rotting-oranges/","nc":"https://neetcode.io/problems/rotting-fruit?list=neetcode150"},{"id":85,"name":"Pacific Atlantic Water Flow","cat":"Graphs","diff":"Medium","lc":"https://leetcode.com/problems/pacific-atlantic-water-flow/","nc":"https://neetcode.io/problems/pacific-atlantic-water-flow?list=neetcode150"},{"id":86,"name":"Surrounded Regions","cat":"Graphs","diff":"Medium","lc":"https://leetcode.com/problems/surrounded-regions/","nc":"https://neetcode.io/problems/surrounded-regions?list=neetcode150"},{"id":87,"name":"Course Schedule","cat":"Graphs","diff":"Medium","lc":"https://leetcode.com/problems/course-schedule/","nc":"https://neetcode.io/problems/course-schedule?list=neetcode150"},{"id":88,"name":"Course Schedule II","cat":"Graphs","diff":"Medium","lc":"https://leetcode.com/problems/course-schedule-ii/","nc":"https://neetcode.io/problems/course-schedule-ii?list=neetcode150"},{"id":89,"name":"Graph Valid Tree","cat":"Graphs","diff":"Medium","lc":"https://leetcode.com/problems/graph-valid-tree/","nc":"https://neetcode.io/problems/valid-tree?list=neetcode150"},{"id":90,"name":"Number of Connected Components In An Undirected Graph","cat":"Graphs","diff":"Medium","lc":"https://leetcode.com/problems/number-of-connected-components-in-an-undirected-graph/","nc":"https://neetcode.io/problems/count-connected-components?list=neetcode150"},{"id":91,"name":"Redundant Connection","cat":"Graphs","diff":"Medium","lc":"https://leetcode.com/problems/redundant-connection/","nc":"https://neetcode.io/problems/redundant-connection?list=neetcode150"},{"id":92,"name":"Word Ladder","cat":"Graphs","diff":"Hard","lc":"https://leetcode.com/problems/word-ladder/","nc":"https://neetcode.io/problems/word-ladder?list=neetcode150"},{"id":93,"name":"Network Delay Time","cat":"Advanced Graphs","diff":"Medium","lc":"https://leetcode.com/problems/network-delay-time/","nc":"https://neetcode.io/problems/network-delay-time?list=neetcode150"},{"id":94,"name":"Reconstruct Itinerary","cat":"Advanced Graphs","diff":"Hard","lc":"https://leetcode.com/problems/reconstruct-itinerary/","nc":"https://neetcode.io/problems/reconstruct-flight-path?list=neetcode150"},{"id":95,"name":"Min Cost to Connect All Points","cat":"Advanced Graphs","diff":"Medium","lc":"https://leetcode.com/problems/min-cost-to-connect-all-points/","nc":"https://neetcode.io/problems/min-cost-to-connect-points?list=neetcode150"},{"id":96,"name":"Swim In Rising Water","cat":"Advanced Graphs","diff":"Hard","lc":"https://leetcode.com/problems/swim-in-rising-water/","nc":"https://neetcode.io/problems/swim-in-rising-water?list=neetcode150"},{"id":97,"name":"Alien Dictionary","cat":"Advanced Graphs","diff":"Hard","lc":"https://leetcode.com/problems/alien-dictionary/","nc":"https://neetcode.io/problems/foreign-dictionary?list=neetcode150"},{"id":98,"name":"Cheapest Flights Within K Stops","cat":"Advanced Graphs","diff":"Medium","lc":"https://leetcode.com/problems/cheapest-flights-within-k-stops/","nc":"https://neetcode.io/problems/cheapest-flight-path?list=neetcode150"},{"id":99,"name":"Climbing Stairs","cat":"1-D Dynamic Programming","diff":"Easy","lc":"https://leetcode.com/problems/climbing-stairs/","nc":"https://neetcode.io/problems/climbing-stairs?list=neetcode150"},{"id":100,"name":"Min Cost Climbing Stairs","cat":"1-D Dynamic Programming","diff":"Easy","lc":"https://leetcode.com/problems/min-cost-climbing-stairs/","nc":"https://neetcode.io/problems/min-cost-climbing-stairs?list=neetcode150"},{"id":101,"name":"House Robber","cat":"1-D Dynamic Programming","diff":"Medium","lc":"https://leetcode.com/problems/house-robber/","nc":"https://neetcode.io/problems/house-robber?list=neetcode150"},{"id":102,"name":"House Robber II","cat":"1-D Dynamic Programming","diff":"Medium","lc":"https://leetcode.com/problems/house-robber-ii/","nc":"https://neetcode.io/problems/house-robber-ii?list=neetcode150"},{"id":103,"name":"Longest Palindromic Substring","cat":"1-D Dynamic Programming","diff":"Medium","lc":"https://leetcode.com/problems/longest-palindromic-substring/","nc":"https://neetcode.io/problems/longest-palindromic-substring?list=neetcode150"},{"id":104,"name":"Palindromic Substrings","cat":"1-D Dynamic Programming","diff":"Medium","lc":"https://leetcode.com/problems/palindromic-substrings/","nc":"https://neetcode.io/problems/palindromic-substrings?list=neetcode150"},{"id":105,"name":"Decode Ways","cat":"1-D Dynamic Programming","diff":"Medium","lc":"https://leetcode.com/problems/decode-ways/","nc":"https://neetcode.io/problems/decode-ways?list=neetcode150"},{"id":106,"name":"Coin Change","cat":"1-D Dynamic Programming","diff":"Medium","lc":"https://leetcode.com/problems/coin-change/","nc":"https://neetcode.io/problems/coin-change?list=neetcode150"},{"id":107,"name":"Maximum Product Subarray","cat":"1-D Dynamic Programming","diff":"Medium","lc":"https://leetcode.com/problems/maximum-product-subarray/","nc":"https://neetcode.io/problems/maximum-product-subarray?list=neetcode150"},{"id":108,"name":"Word Break","cat":"1-D Dynamic Programming","diff":"Medium","lc":"https://leetcode.com/problems/word-break/","nc":"https://neetcode.io/problems/word-break?list=neetcode150"},{"id":109,"name":"Longest Increasing Subsequence","cat":"1-D Dynamic Programming","diff":"Medium","lc":"https://leetcode.com/problems/longest-increasing-subsequence/","nc":"https://neetcode.io/problems/longest-increasing-subsequence?list=neetcode150"},{"id":110,"name":"Partition Equal Subset Sum","cat":"1-D Dynamic Programming","diff":"Medium","lc":"https://leetcode.com/problems/partition-equal-subset-sum/","nc":"https://neetcode.io/problems/partition-equal-subset-sum?list=neetcode150"},{"id":111,"name":"Unique Paths","cat":"2-D Dynamic Programming","diff":"Medium","lc":"https://leetcode.com/problems/unique-paths/","nc":"https://neetcode.io/problems/count-paths?list=neetcode150"},{"id":112,"name":"Longest Common Subsequence","cat":"2-D Dynamic Programming","diff":"Medium","lc":"https://leetcode.com/problems/longest-common-subsequence/","nc":"https://neetcode.io/problems/longest-common-subsequence?list=neetcode150"},{"id":113,"name":"Best Time to Buy And Sell Stock With Cooldown","cat":"2-D Dynamic Programming","diff":"Medium","lc":"https://leetcode.com/problems/best-time-to-buy-and-sell-stock-with-cooldown/","nc":"https://neetcode.io/problems/buy-and-sell-crypto-with-cooldown?list=neetcode150"},{"id":114,"name":"Coin Change II","cat":"2-D Dynamic Programming","diff":"Medium","lc":"https://leetcode.com/problems/coin-change-ii/","nc":"https://neetcode.io/problems/coin-change-ii?list=neetcode150"},{"id":115,"name":"Target Sum","cat":"2-D Dynamic Programming","diff":"Medium","lc":"https://leetcode.com/problems/target-sum/","nc":"https://neetcode.io/problems/target-sum?list=neetcode150"},{"id":116,"name":"Interleaving String","cat":"2-D Dynamic Programming","diff":"Medium","lc":"https://leetcode.com/problems/interleaving-string/","nc":"https://neetcode.io/problems/interleaving-string?list=neetcode150"},{"id":117,"name":"Longest Increasing Path In a Matrix","cat":"2-D Dynamic Programming","diff":"Hard","lc":"https://leetcode.com/problems/longest-increasing-path-in-a-matrix/","nc":"https://neetcode.io/problems/longest-increasing-path-in-matrix?list=neetcode150"},{"id":118,"name":"Distinct Subsequences","cat":"2-D Dynamic Programming","diff":"Hard","lc":"https://leetcode.com/problems/distinct-subsequences/","nc":"https://neetcode.io/problems/count-subsequences?list=neetcode150"},{"id":119,"name":"Edit Distance","cat":"2-D Dynamic Programming","diff":"Medium","lc":"https://leetcode.com/problems/edit-distance/","nc":"https://neetcode.io/problems/edit-distance?list=neetcode150"},{"id":120,"name":"Burst Balloons","cat":"2-D Dynamic Programming","diff":"Hard","lc":"https://leetcode.com/problems/burst-balloons/","nc":"https://neetcode.io/problems/burst-balloons?list=neetcode150"},{"id":121,"name":"Regular Expression Matching","cat":"2-D Dynamic Programming","diff":"Hard","lc":"https://leetcode.com/problems/regular-expression-matching/","nc":"https://neetcode.io/problems/regular-expression-matching?list=neetcode150"},{"id":122,"name":"Maximum Subarray","cat":"Greedy","diff":"Medium","lc":"https://leetcode.com/problems/maximum-subarray/","nc":"https://neetcode.io/problems/maximum-subarray?list=neetcode150"},{"id":123,"name":"Jump Game","cat":"Greedy","diff":"Medium","lc":"https://leetcode.com/problems/jump-game/","nc":"https://neetcode.io/problems/jump-game?list=neetcode150"},{"id":124,"name":"Jump Game II","cat":"Greedy","diff":"Medium","lc":"https://leetcode.com/problems/jump-game-ii/","nc":"https://neetcode.io/problems/jump-game-ii?list=neetcode150"},{"id":125,"name":"Gas Station","cat":"Greedy","diff":"Medium","lc":"https://leetcode.com/problems/gas-station/","nc":"https://neetcode.io/problems/gas-station?list=neetcode150"},{"id":126,"name":"Hand of Straights","cat":"Greedy","diff":"Medium","lc":"https://leetcode.com/problems/hand-of-straights/","nc":"https://neetcode.io/problems/hand-of-straights?list=neetcode150"},{"id":127,"name":"Merge Triplets to Form Target Triplet","cat":"Greedy","diff":"Medium","lc":"https://leetcode.com/problems/merge-triplets-to-form-target-triplet/","nc":"https://neetcode.io/problems/merge-triplets-to-form-target?list=neetcode150"},{"id":128,"name":"Partition Labels","cat":"Greedy","diff":"Medium","lc":"https://leetcode.com/problems/partition-labels/","nc":"https://neetcode.io/problems/partition-labels?list=neetcode150"},{"id":129,"name":"Valid Parenthesis String","cat":"Greedy","diff":"Medium","lc":"https://leetcode.com/problems/valid-parenthesis-string/","nc":"https://neetcode.io/problems/valid-parenthesis-string?list=neetcode150"},{"id":130,"name":"Insert Interval","cat":"Intervals","diff":"Medium","lc":"https://leetcode.com/problems/insert-interval/","nc":"https://neetcode.io/problems/insert-new-interval?list=neetcode150"},{"id":131,"name":"Merge Intervals","cat":"Intervals","diff":"Medium","lc":"https://leetcode.com/problems/merge-intervals/","nc":"https://neetcode.io/problems/merge-intervals?list=neetcode150"},{"id":132,"name":"Non Overlapping Intervals","cat":"Intervals","diff":"Medium","lc":"https://leetcode.com/problems/non-overlapping-intervals/","nc":"https://neetcode.io/problems/non-overlapping-intervals?list=neetcode150"},{"id":133,"name":"Meeting Rooms","cat":"Intervals","diff":"Easy","lc":"https://leetcode.com/problems/meeting-rooms/","nc":"https://neetcode.io/problems/meeting-schedule?list=neetcode150"},{"id":134,"name":"Meeting Rooms II","cat":"Intervals","diff":"Medium","lc":"https://leetcode.com/problems/meeting-rooms-ii/","nc":"https://neetcode.io/problems/meeting-schedule-ii?list=neetcode150"},{"id":135,"name":"Minimum Interval to Include Each Query","cat":"Intervals","diff":"Hard","lc":"https://leetcode.com/problems/minimum-interval-to-include-each-query/","nc":"https://neetcode.io/problems/minimum-interval-including-query?list=neetcode150"},{"id":136,"name":"Rotate Image","cat":"Math & Geometry","diff":"Medium","lc":"https://leetcode.com/problems/rotate-image/","nc":"https://neetcode.io/problems/rotate-matrix?list=neetcode150"},{"id":137,"name":"Spiral Matrix","cat":"Math & Geometry","diff":"Medium","lc":"https://leetcode.com/problems/spiral-matrix/","nc":"https://neetcode.io/problems/spiral-matrix?list=neetcode150"},{"id":138,"name":"Set Matrix Zeroes","cat":"Math & Geometry","diff":"Medium","lc":"https://leetcode.com/problems/set-matrix-zeroes/","nc":"https://neetcode.io/problems/set-zeroes-in-matrix?list=neetcode150"},{"id":139,"name":"Happy Number","cat":"Math & Geometry","diff":"Easy","lc":"https://leetcode.com/problems/happy-number/","nc":"https://neetcode.io/problems/non-cyclical-number?list=neetcode150"},{"id":140,"name":"Plus One","cat":"Math & Geometry","diff":"Easy","lc":"https://leetcode.com/problems/plus-one/","nc":"https://neetcode.io/problems/plus-one?list=neetcode150"},{"id":141,"name":"Pow(x, n)","cat":"Math & Geometry","diff":"Medium","lc":"https://leetcode.com/problems/powx-n/","nc":"https://neetcode.io/problems/pow-x-n?list=neetcode150"},{"id":142,"name":"Multiply Strings","cat":"Math & Geometry","diff":"Medium","lc":"https://leetcode.com/problems/multiply-strings/","nc":"https://neetcode.io/problems/multiply-strings?list=neetcode150"},{"id":143,"name":"Detect Squares","cat":"Math & Geometry","diff":"Medium","lc":"https://leetcode.com/problems/detect-squares/","nc":"https://neetcode.io/problems/count-squares?list=neetcode150"},{"id":144,"name":"Single Number","cat":"Bit Manipulation","diff":"Easy","lc":"https://leetcode.com/problems/single-number/","nc":"https://neetcode.io/problems/single-number?list=neetcode150"},{"id":145,"name":"Number of 1 Bits","cat":"Bit Manipulation","diff":"Easy","lc":"https://leetcode.com/problems/number-of-1-bits/","nc":"https://neetcode.io/problems/number-of-one-bits?list=neetcode150"},{"id":146,"name":"Counting Bits","cat":"Bit Manipulation","diff":"Easy","lc":"https://leetcode.com/problems/counting-bits/","nc":"https://neetcode.io/problems/counting-bits?list=neetcode150"},{"id":147,"name":"Reverse Bits","cat":"Bit Manipulation","diff":"Easy","lc":"https://leetcode.com/problems/reverse-bits/","nc":"https://neetcode.io/problems/reverse-bits?list=neetcode150"},{"id":148,"name":"Missing Number","cat":"Bit Manipulation","diff":"Easy","lc":"https://leetcode.com/problems/missing-number/","nc":"https://neetcode.io/problems/missing-number?list=neetcode150"},{"id":149,"name":"Sum of Two Integers","cat":"Bit Manipulation","diff":"Medium","lc":"https://leetcode.com/problems/sum-of-two-integers/","nc":"https://neetcode.io/problems/sum-of-two-integers?list=neetcode150"},{"id":150,"name":"Reverse Integer","cat":"Bit Manipulation","diff":"Medium","lc":"https://leetcode.com/problems/reverse-integer/","nc":"https://neetcode.io/problems/reverse-integer?list=neetcode150"}];
+const LS_KEY = 'ncsr-v1';
+
+/* ---------- date helpers (local time) ---------- */
+const fmt = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+const todayStr = () => fmt(new Date());
+const parse = s => { const [y,m,d]=s.split('-').map(Number); return new Date(y,m-1,d); };
+const addDays = (s,n) => { const d=parse(s); d.setDate(d.getDate()+n); return fmt(d); };
+const diffDays = (a,b) => Math.round((parse(b)-parse(a))/86400000);
+const nice = s => parse(s).toLocaleDateString(undefined,{month:'short',day:'numeric'});
+
+/* ---------- state ---------- */
+let state = null;
+function migrate(st){
+  if(!Array.isArray(st.dismissed)) st.dismissed = [];
+  if(typeof st.newPerDay !== 'number') st.newPerDay = 2;
+  if(!Array.isArray(st.katas)) st.katas = [];
+  if(!Array.isArray(st.klog)) st.klog = [];
+  if(typeof st.nextKataId !== 'number') st.nextKataId = 1 + st.katas.reduce((m,k)=>Math.max(m,k.id||0),0);
+  // sync bookkeeping: tombstones let deletions survive a merge instead of being
+  // resurrected by the other device's copy; prefT arbitrates small prefs newest-wins.
+  if(!Array.isArray(st.deletedLog)) st.deletedLog = [];
+  if(!Array.isArray(st.deletedKlog)) st.deletedKlog = [];
+  if(!Array.isArray(st.kataTombs)) st.kataTombs = [];
+  if(typeof st.prefT !== 'number') st.prefT = 0;
+  return st;
+}
+/* Kata ids used to be a counter — two offline devices would both mint id 5 and the
+   merge would clobber one. Time+jitter keeps ids numeric (handlers Number() them);
+   the uniqueness loop matters when minting many in one millisecond (bulk seeding
+   drew duplicates from the 1000-value jitter alone). */
+function genId(){
+  let id;
+  do { id = Date.now()*1000 + Math.floor(Math.random()*1000); }
+  while (state && (state.katas.some(k=>k.id===id) || (state.kataTombs||[]).includes(id)));
+  return id;
+}
+function load(){
+  try{ const raw = localStorage.getItem(LS_KEY); if(raw){ state = migrate(JSON.parse(raw)); return; } }catch(e){}
+  state = migrate({ log: [] });
+  save();
+}
+function save(){ try{ localStorage.setItem(LS_KEY, JSON.stringify(state)); }catch(e){} pushSoon(); }
+
+/* ---------- sync (Convex HTTP endpoint) ----------
+   localStorage stays the source of truth; the server holds the merged union of every
+   device that shares the key. Offline, nothing changes — pushes just fail quietly and
+   the next successful round-trip converges. The key is a 128-bit capability: pairing
+   is "open this link on the other machine", same trust model as a private gist URL. */
+const SYNC_URL = 'https://kindred-eel-975.convex.site/sync';
+const SYNC_KEY_LS = 'ncsr-sync-key';
+let syncTimer=null, syncState='off';   // off | ok | dirty | error
+let syncStamp=null;
+function syncKey(){ return localStorage.getItem(SYNC_KEY_LS) || null; }
+function newSyncKey(){
+  const b = new Uint8Array(16); crypto.getRandomValues(b);
+  return [...b].map(x=>x.toString(16).padStart(2,'0')).join('');
+}
+function adoptFragmentKey(){
+  const m = location.hash.match(/^#k=([a-f0-9]{32,64})$/);
+  if(!m) return false;
+  localStorage.setItem(SYNC_KEY_LS, m[1]);
+  history.replaceState(null,'',location.pathname+location.search);
+  return true;
+}
+function pushSoon(){
+  if(!syncKey()) return;
+  syncState='dirty'; paintSync();
+  clearTimeout(syncTimer);
+  syncTimer = setTimeout(syncNow, 1500);
+}
+/* Client-side twin of the server merge. The merge is commutative and idempotent, so
+   running it on both ends is safe — and it closes a lost-update race: anything logged
+   while a sync request is in flight would otherwise be wiped when the response
+   replaced `state` wholesale. */
+function mergeStates(a,b){
+  const deadLog = new Set([...(a.deletedLog||[]), ...(b.deletedLog||[])]);
+  const deadKlog = new Set([...(a.deletedKlog||[]), ...(b.deletedKlog||[])]);
+  const deadKata = new Set([...(a.kataTombs||[]), ...(b.kataTombs||[])]);
+  const unionBy=(x,y,keyFn,dead)=>{
+    const out=new Map();
+    for(const e of [...(x||[]), ...(y||[])]){
+      const k=keyFn(e); if(dead.has(k)) continue;
+      const prev=out.get(k);
+      if(!prev || ((e.n||'').length > (prev.n||'').length)) out.set(k,e);
+    }
+    return [...out.values()];
+  };
+  const katas=new Map();
+  for(const k of [...(a.katas||[]), ...(b.katas||[])]){
+    if(deadKata.has(k.id)) continue;
+    const prev=katas.get(k.id);
+    if(!prev || (k.u||0) >= (prev.u||0)) katas.set(k.id,k);
+  }
+  const prefs = (b.prefT||0) >= (a.prefT||0) ? b : a;
+  const sortD=(x,y)=> x.d<y.d?-1 : x.d>y.d?1 : 0;
+  return migrate({
+    log: unionBy(a.log,b.log,e=>`${e.pid}|${e.d}|${e.r}`,deadLog).sort(sortD),
+    klog: unionBy(a.klog,b.klog,e=>`${e.kid}|${e.d}|${e.r}`,deadKlog).sort(sortD),
+    katas: [...katas.values()],
+    dismissed: prefs.dismissed||[], newPerDay: prefs.newPerDay??2,
+    prefT: Math.max(a.prefT||0,b.prefT||0),
+    deletedLog:[...deadLog], deletedKlog:[...deadKlog], kataTombs:[...deadKata],
+    nextKataId: Math.max(a.nextKataId||1, b.nextKataId||1),
+  });
+}
+let syncInFlight=false;
+async function syncNow(){
+  const key = syncKey(); if(!key || syncInFlight) return;
+  syncInFlight=true;
+  const sentSnapshot = JSON.stringify(state);
+  try{
+    const res = await fetch(SYNC_URL, {method:'POST', headers:{'Content-Type':'application/json'},
+      body: `{"key":${JSON.stringify(key)},"state":${sentSnapshot}}`});
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    const serverMerged = migrate((await res.json()).state);
+    // merge into *current* state — it may have moved while the request was in flight
+    const next = mergeStates(state, serverMerged);
+    if(JSON.stringify(next) !== JSON.stringify(state)){
+      state = next;
+      try{ localStorage.setItem(LS_KEY, JSON.stringify(state)); }catch(e){}
+      render();
+    }
+    syncState='ok'; syncStamp=new Date();
+    // if local changes landed mid-flight, the server doesn't have them yet — push again
+    if(JSON.stringify(state) !== sentSnapshot && JSON.stringify(state) !== JSON.stringify(serverMerged)){
+      clearTimeout(syncTimer); syncTimer=setTimeout(syncNow, 400);
+    }
+  }catch(e){
+    syncState='error';
+  }
+  syncInFlight=false;
+  paintSync();
+}
+function paintSync(){
+  const el=document.getElementById('syncBtn'); if(!el) return;
+  el.textContent = syncState==='off' ? 'Sync' :
+    syncState==='ok' ? `Sync ✓` : syncState==='dirty' ? 'Sync …' : 'Sync ⚠';
+  el.title = syncState==='off' ? 'Set up cross-device sync' :
+    syncState==='ok' ? `Synced ${syncStamp?syncStamp.toLocaleTimeString():''}` :
+    syncState==='dirty' ? 'Changes pending' : 'Sync failed — will retry on next change';
+}
+
+/* ---------- scheduler: SM-2 adapted ----------
+   ease starts 2.5.
+   video (couldn't solve): interval=1, ease-0.2       -> redo tomorrow
+   hints (solved w/ help): interval=2, ease-0.15      -> redo in 2 days
+   cold  (solved solo):    first time -> 7 days,
+                           after: max(7, round(interval*ease)), ease+0.05, cap 120d
+----------------------------------------------- */
+function schedule(attempts){
+  let ease=2.5, interval=0, due=null;
+  for(const a of attempts){
+    if(a.r==='cold'){ interval = interval===0 ? 7 : Math.min(120, Math.max(7, Math.round(interval*ease))); ease=Math.min(2.8, ease+0.05); }
+    else if(a.r==='hints'){ interval=2; ease=Math.max(1.3, ease-0.15); }
+    else { interval=1; ease=Math.max(1.3, ease-0.2); }
+    due = addDays(a.d, interval);
+  }
+  return {ease, interval, due, last: attempts[attempts.length-1]||null, n: attempts.length};
+}
+function previewNext(st, r){
+  let {ease=2.5, interval=0} = st.n? st : {};
+  if(r==='cold') return st.n===0||interval===0 ? 7 : Math.min(120, Math.max(7, Math.round(interval*ease)));
+  if(r==='hints') return 2;
+  return 1;
+}
+function attemptsFor(pid){ return state.log.filter(a=>a.pid===pid).sort((a,b)=>a.d<b.d?-1:1); }
+function pstate(p){
+  const at = attemptsFor(p.id);
+  if(!at.length) return {status:'new', n:0, due:null, interval:0, ease:2.5, last:null};
+  const s = schedule(at);
+  const t = todayStr();
+  let status = 'scheduled';
+  if(s.due <= t) status = 'due';
+  else if(s.interval >= 30) status = 'solid';
+  return {status, ...s};
+}
+
+/* ---------- derived ---------- */
+const NEW_GATE = 6;          // stop serving new problems while this many reviews are due (Anki's backlog rule)
+const INTERLEAVE_AFTER = 3;  // start rotating categories once this many patterns are in play
+
+function isDismissed(pid){ return (state.dismissed||[]).includes(pid); }
+
+/* A problem is a leech once 2 of its last 3 attempts needed help. Repeated failure
+   means the encoding is wrong, so re-attempting it cold just burns another rep. */
+function leechInfo(pid){
+  const at = attemptsFor(pid);
+  if(at.length < 3) return null;
+  const last3 = at.slice(-3);
+  const bad = last3.filter(a=>a.r!=='cold').length;
+  return bad >= 2 ? {bad, n: at.length} : null;
+}
+
+function allDue(){
+  const t = todayStr();
+  return PROBLEMS.map(p=>({p, s:pstate(p)}))
+    .filter(x=>x.s.n>0 && x.s.due<=t)
+    .sort((a,b)=> a.s.due<b.s.due?-1 : a.s.due>b.s.due?1 : 0);
+}
+function dueList(){ return allDue().filter(x=>!leechInfo(x.p.id)); }
+function leechList(){ return allDue().filter(x=>leechInfo(x.p.id)); }
+
+function unseen(){ return PROBLEMS.filter(p=>attemptsFor(p.id).length===0 && !isDismissed(p.id)); }
+function touchedCats(){ return new Set(PROBLEMS.filter(p=>attemptsFor(p.id).length>0).map(p=>p.cat)); }
+
+/* Interleaved new queue. Rohrer's RCT: practice mixed across patterns beats practice
+   blocked by pattern (d≈0.83), because interviews never tell you which pattern applies.
+   Problems from patterns you've already met come first — but never two in a row from
+   the same one, once you have enough patterns in play to rotate. */
+function newQueue(limit){
+  const touched = touchedCats();
+  const sorted = unseen().filter(p=>!pendingTransfer.has(p.id))
+    .sort((a,b)=> (touched.has(a.cat)?0:1)-(touched.has(b.cat)?0:1) || a.id-b.id);
+  if(touched.size < INTERLEAVE_AFTER) return sorted.slice(0, limit);
+  const out=[], pool=[...sorted];
+  let lastCat=null;
+  while(out.length<limit && pool.length){
+    let i = pool.findIndex(p=>p.cat!==lastCat);
+    if(i<0) i=0;
+    lastCat = pool[i].cat;
+    out.push(pool.splice(i,1)[0]);
+  }
+  return out;
+}
+
+/* Transfer test: re-solving a problem you've already owned twice tests recognition.
+   Solving an unseen sibling in the same pattern tests the thing interviews test. */
+function transferSibling(p){
+  const at = attemptsFor(p.id);
+  if(at.length < 3 || at.filter(a=>a.r==='cold').length < 2) return null;
+  if(leechInfo(p.id)) return null;
+  return PROBLEMS.find(q=>q.cat===p.cat && q.id!==p.id && !isDismissed(q.id) && attemptsFor(q.id).length===0) || null;
+}
+function streak(){
+  const days = new Set(state.log.map(a=>a.d));
+  let s=0, d=todayStr();
+  if(!days.has(d)) d=addDays(d,-1);
+  while(days.has(d)){ s++; d=addDays(d,-1); }
+  return s;
+}
+
+/* ---------- katas ----------
+   A different learning object from a NeetCode problem, so a different scheduler.
+   A problem is a 30-minute episode; a kata is an atomic fact you either produce in
+   five seconds or you don't. That means a short first interval and a high ceiling,
+   where problems want a 7-day floor and a 120-day cap.
+------------------------------- */
+const KLANGS = [
+  {id:'javascript', label:'JavaScript', run:true},
+  {id:'typescript', label:'TypeScript', run:true},
+  {id:'sql',        label:'SQL',        run:true},
+  {id:'python',     label:'Python',     run:false},
+  {id:'go',         label:'Go',         run:false},
+  {id:'rust',       label:'Rust',       run:false},
+  {id:'shell',      label:'Shell',      run:false},
+  {id:'other',      label:'Other',      run:false},
+];
+const KRLABEL = {instant:'Instant', slow:'Had to think', blank:'Blanked'};
+const KRICON  = {instant:'⚡', slow:'🤔', blank:'✖'};
+const langLabel = id => (KLANGS.find(l=>l.id===id)||{label:id}).label;
+const canRun = id => !!(KLANGS.find(l=>l.id===id)||{}).run;
+
+function kataById(kid){ return state.katas.find(k=>k.id===kid); }
+function kAttempts(kid){ return state.klog.filter(a=>a.kid===kid).sort((a,b)=>a.d<b.d?-1:1); }
+/* A kata with no answer yet is a capture, not a card — it stays out of the queue
+   until you write the answer. Capture should cost one field in the moment; authoring
+   is a separate, slower act. Repo drills are the exception: their "answer" is a real
+   implementation in an external repo, so they're never drafts. */
+function isDraft(k){ return k.kind!=='repo' && (!k.a || !k.a.trim()); }
+
+/* The kata-machine DSA set (mirrors ligma.config.ts in ~/dev/kata-typescript).
+   These are repo drills: the app schedules them, the repo executes them — kata-machine's
+   default of regenerating all 23 every day is massed practice, and the whole point of
+   this deck is to only re-implement what's actually decaying. */
+const DSA_SET = [
+  ['LinearSearchList','linear search over an array'],
+  ['BinarySearchList','binary search over a sorted array'],
+  ['TwoCrystalBalls','two crystal balls — O(√n) drop search'],
+  ['BubbleSort','bubble sort in place'],
+  ['QuickSort','quicksort with in-place partition'],
+  ['SinglyLinkedList','singly linked list — full class'],
+  ['DoublyLinkedList','doubly linked list — full class'],
+  ['Queue','queue via linked nodes'],
+  ['Stack','stack via linked nodes'],
+  ['ArrayList','array-backed list with growth'],
+  ['MazeSolver','recursive maze path solver'],
+  ['BTPreOrder','binary tree pre-order traversal'],
+  ['BTInOrder','binary tree in-order traversal'],
+  ['BTPostOrder','binary tree post-order traversal'],
+  ['BTBFS','binary tree breadth-first search'],
+  ['CompareBinaryTrees','structural binary tree comparison'],
+  ['DFSOnBST','depth-first search on a BST'],
+  ['DFSGraphList','DFS on adjacency-list graph'],
+  ['BFSGraphMatrix','BFS on adjacency-matrix graph'],
+  ['Trie','trie with insert/delete/autocomplete'],
+  ['Map','hash map from scratch'],
+  ['MinHeap','min-heap with heapify up/down'],
+  ['LRU','LRU cache — map + doubly linked list'],
+];
+function seedDSA(){
+  const have = new Set(state.katas.map(k=>k.dsa).filter(Boolean));
+  let added=0;
+  for(const [name,desc] of DSA_SET){
+    if(have.has(name)) continue;
+    state.katas.push({id: genId(), q:`Implement ${name} — ${desc}`, a:'', lang:'typescript',
+      kind:'repo', dsa:name, test:'', setup:'', starter:'', u: Date.now(), src:null, created: todayStr()});
+    added++;
+  }
+  save();
+  return added;
+}
+
+function kschedule(attempts){
+  let ease=2.5, interval=0, due=null;
+  for(const a of attempts){
+    if(a.r==='instant'){
+      interval = interval===0 ? 2 : Math.min(365, Math.max(2, Math.round(interval*ease)));
+      ease = Math.min(3.0, ease+0.05);
+    } else if(a.r==='slow'){
+      interval = Math.max(1, Math.round(interval*1.2));
+      ease = Math.max(1.3, ease-0.10);
+    } else {
+      interval = 1;
+      ease = Math.max(1.3, ease-0.25);
+    }
+    due = addDays(a.d, interval);
+  }
+  return {ease, interval, due, last: attempts[attempts.length-1]||null, n: attempts.length};
+}
+function kstate(k){
+  const at = kAttempts(k.id);
+  if(!at.length) return {status:'new', n:0, due:null, interval:0, ease:2.5, last:null};
+  const s = kschedule(at);
+  return {status: s.due<=todayStr() ? 'due' : (s.interval>=60?'solid':'scheduled'), ...s};
+}
+function kpreview(st, r){
+  const {ease=2.5, interval=0} = st.n? st : {};
+  if(r==='instant') return interval===0 ? 2 : Math.min(365, Math.max(2, Math.round(interval*ease)));
+  if(r==='slow') return Math.max(1, Math.round(interval*1.2));
+  return 1;
+}
+/* When a problem leeches, the pattern hasn't encoded. When a kata leeches it's almost
+   always a malformed card — asking two things at once. SuperMemo's minimum information
+   principle: the fix is to split it, not to drill it harder. */
+function kLeech(kid){
+  const at = kAttempts(kid);
+  if(at.length < 3) return null;
+  const bad = at.slice(-3).filter(a=>a.r!=='instant').length;
+  return bad >= 2 ? {bad} : null;
+}
+function kataDue(){
+  const t = todayStr();
+  const due = state.katas.filter(k=>!isDraft(k)).map(k=>({k, s:kstate(k)}))
+    .filter(x=>x.s.n>0 && x.s.due<=t)
+    .sort((a,b)=> a.s.due<b.s.due?-1 : a.s.due>b.s.due?1 : 0);
+  const fresh = state.katas.filter(k=>!isDraft(k) && kAttempts(k.id).length===0).map(k=>({k, s:kstate(k)}));
+  return interleaveLang([...due, ...fresh]);
+}
+/* Same Rohrer logic as the problem queue: five TypeScript katas in a row lets you
+   coast on primed context. Switching languages is the discrimination the job asks for. */
+function interleaveLang(items){
+  if(new Set(items.map(x=>x.k.lang)).size < 2) return items;
+  const out=[], pool=[...items];
+  let lastLang=null;
+  while(pool.length){
+    let i = pool.findIndex(x=>x.k.lang!==lastLang);
+    if(i<0) i=0;
+    lastLang = pool[i].k.lang;
+    out.push(pool.splice(i,1)[0]);
+  }
+  return out;
+}
+
+/* ---------- code runtimes (lazy-loaded, per language) ---------- */
+const loaded = {};
+function loadScript(src){
+  return new Promise((res,rej)=>{
+    const s=document.createElement('script'); s.src=src; s.onload=res; s.onerror=()=>rej(new Error('Could not load '+src));
+    document.head.appendChild(s);
+  });
+}
+const TS_CDN = 'https://cdn.jsdelivr.net/npm/typescript@5.6.3/lib/';
+// Without a standard library every `Map` reads as an unknown name, so the typechecker
+// emits pure noise. These are the lib files that make it mean something — ~39KB gzipped.
+const TS_LIBS = ['lib.es5.d.ts','lib.es2015.core.d.ts','lib.es2015.collection.d.ts','lib.es2015.iterable.d.ts',
+  'lib.es2015.symbol.d.ts','lib.es2015.symbol.wellknown.d.ts','lib.es2015.promise.d.ts','lib.es2015.generator.d.ts',
+  'lib.es2017.object.d.ts','lib.es2019.array.d.ts','lib.es2020.bigint.d.ts'];
+async function needTS(){
+  if(!loaded.ts){
+    await loadScript(TS_CDN+'typescript.js');
+    const parts = await Promise.all(TS_LIBS.map(f=>fetch(TS_CDN+f).then(r=>r.ok?r.text():'').catch(()=>'')));
+    // assert/eq are injected at runtime; declare them here so the checker doesn't
+    // flag them, and so k.ts line numbers stay honest.
+    loaded.tsLib = parts.join('\n').replace(/^\/\/\/\s*<reference.*$/gm,'')
+      + '\ndeclare function assert(cond: any, msg?: string): void;'
+      + '\ndeclare function eq(actual: any, expected: any, msg?: string): boolean;';
+    loaded.ts=true;
+  }
+  return window.ts;
+}
+async function needSQL(){
+  if(!loaded.sql){
+    await loadScript('https://cdn.jsdelivr.net/npm/sql.js@1.11.0/dist/sql-wasm.js');
+    loaded.sqlDb = await window.initSqlJs({locateFile: f=>'https://cdn.jsdelivr.net/npm/sql.js@1.11.0/dist/'+f});
+    loaded.sql=true;
+  }
+  return loaded.sqlDb;
+}
+
+/* ---------- Monaco (VS Code's editor) — progressive enhancement ----------
+   The plain textarea stays in the markup as the fallback; when Monaco loads we mount
+   over it. TS/JS get the real language service (completions, hover, live squiggles),
+   everything else gets syntax highlighting. If the CDN is unreachable, the textarea
+   keeps working and Run still typechecks — nothing depends on Monaco.
+--------------------------------------------------------------------------- */
+const MONACO_BASE = 'https://cdn.jsdelivr.net/npm/monaco-editor@0.52.2/min/';
+const MLANG = {javascript:'javascript', typescript:'typescript', sql:'sql', python:'python', go:'go', rust:'rust', shell:'shell', other:'plaintext'};
+const monacoEds = new Map();   // kid -> editor instance
+let monacoState = 'idle';      // idle | loading | ready | failed
+function monacoTheme(){
+  const t = document.documentElement.dataset.theme || (matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');
+  return t==='dark' ? 'vs-dark' : 'vs';
+}
+function needMonaco(){
+  if(monacoState==='ready') return Promise.resolve(window.monaco);
+  if(monacoState==='failed') return Promise.reject(new Error('monaco unavailable'));
+  if(loaded.monacoP) return loaded.monacoP;
+  monacoState='loading';
+  loaded.monacoP = new Promise((res,rej)=>{
+    // Workers can't be created cross-origin directly; the standard fix is a same-origin
+    // blob that importScripts the CDN worker.
+    window.MonacoEnvironment = { getWorkerUrl: () => URL.createObjectURL(new Blob(
+      [`self.MonacoEnvironment={baseUrl:'${MONACO_BASE}'};importScripts('${MONACO_BASE}vs/base/worker/workerMain.js');`],
+      {type:'text/javascript'})) };
+    loadScript(MONACO_BASE+'vs/loader.js').then(()=>{
+      window.require.config({paths:{vs: MONACO_BASE+'vs'}});
+      window.require(['vs/editor/editor.main'], ()=>{
+        const m = window.monaco;
+        const opts = {target: m.languages.typescript.ScriptTarget.ES2020, strict:false, allowNonTsExtensions:true, noEmit:true};
+        m.languages.typescript.typescriptDefaults.setCompilerOptions(opts);
+        m.languages.typescript.javascriptDefaults.setCompilerOptions({...opts, allowJs:true, checkJs:false});
+        const globals = 'declare function assert(cond: any, msg?: string): void;\ndeclare function eq(actual: any, expected: any, msg?: string): boolean;';
+        m.languages.typescript.typescriptDefaults.addExtraLib(globals, 'ts:kata-globals.d.ts');
+        m.languages.typescript.javascriptDefaults.addExtraLib(globals, 'ts:kata-globals.d.ts');
+        monacoState='ready'; res(m);
+      }, err=>{ monacoState='failed'; rej(err); });
+    }).catch(err=>{ monacoState='failed'; rej(err); });
+  });
+  return loaded.monacoP;
+}
+/* render() rebuilds the DOM wholesale, so editors from the previous render are orphaned —
+   dispose them all, then mount fresh into whatever's open now. */
+function disposeKataEditors(){
+  for(const ed of monacoEds.values()){ try{ ed.getModel()?.dispose(); ed.dispose(); }catch(_){} }
+  monacoEds.clear();
+}
+function enhanceKataEditors(){
+  const tas = [...view.querySelectorAll('textarea[data-keditor]')];
+  const reveals = [...view.querySelectorAll('.reveal pre[data-lang]')];
+  if(!tas.length && !reveals.length) return;
+  needMonaco().then(m=>{
+    m.editor.setTheme(monacoTheme());
+    for(const ta of tas){
+      const kid = Number(ta.dataset.keditor);
+      const k = kataById(kid); if(!k || monacoEds.has(kid)) continue;
+      const wrap = document.createElement('div');
+      wrap.className='med';
+      ta.replaceWith(wrap);
+      const uri = m.Uri.parse(`inmemory://kata/${kid}.${k.lang==='typescript'?'ts':k.lang==='javascript'?'js':'txt'}`);
+      m.editor.getModel(uri)?.dispose();
+      const ed = m.editor.create(wrap, {
+        model: m.editor.createModel(ta.value, MLANG[k.lang]||'plaintext', uri),
+        automaticLayout:true, minimap:{enabled:false}, fontSize:13, lineNumbers:'on',
+        scrollBeyondLastLine:false, tabSize:2, folding:false, wordWrap:'off',
+        renderLineHighlight:'none', fixedOverflowWidgets:true, scrollbar:{alwaysConsumeMouseWheel:false},
+        padding:{top:10,bottom:10}, fontFamily:'ui-monospace,SFMono-Regular,Menlo,Consolas,monospace',
+      });
+      ed.onDidChangeModelContent(()=>kataDraft.set(kid, ed.getValue()));
+      ed.addCommand(m.KeyMod.CtrlCmd | m.KeyCode.Enter, ()=>runKataFromUI(kid));
+      monacoEds.set(kid, ed);
+    }
+    for(const pre of reveals){
+      if(pre.dataset.colorized) continue;
+      pre.dataset.colorized='1';
+      m.editor.colorizeElement(pre, {theme: monacoTheme(), mimeType: MLANG[pre.dataset.lang]||'plaintext', tabSize:2});
+    }
+  }).catch(()=>{}); // textarea fallback stays in place
+}
+
+function runJS(code, test){
+  const logs=[];
+  const fakeConsole={log:(...a)=>logs.push(a.map(fmtVal).join(' ')), error:(...a)=>logs.push('Error: '+a.map(fmtVal).join(' ')), warn:(...a)=>logs.push(a.map(fmtVal).join(' '))};
+  const assert=(cond,msg)=>{ if(!cond) throw new Error(msg||'Assertion failed'); };
+  const eq=(a,b,msg)=>{ const A=JSON.stringify(a),B=JSON.stringify(b);
+    if(A!==B) throw new Error((msg||'Expected')+`\n  expected: ${B}\n  actual:   ${A}`); return true; };
+  try{
+    new Function('console','assert','eq', code + (test?`\n;{\n${test}\n}`:''))(fakeConsole, assert, eq);
+    return {ok:true, logs, tested:!!test};
+  }catch(e){
+    return {ok:false, logs, tested:!!test, error:(e&&e.message)||String(e)};
+  }
+}
+function fmtVal(v){
+  if(v instanceof Map) return 'Map('+v.size+') {'+[...v].map(([k,x])=>` ${JSON.stringify(k)} => ${fmtVal(x)}`).join(',')+' }';
+  if(v instanceof Set) return 'Set('+v.size+') {'+[...v].map(fmtVal).join(', ')+'}';
+  if(typeof v==='string') return v;
+  try{ return JSON.stringify(v); }catch(_){ return String(v); }
+}
+async function runTS(code, test){
+  const ts = await needTS();
+  const full = code + (test?`\n;{\n${test}\n}`:'');
+  const out = ts.transpileModule(full, {compilerOptions:{target:ts.ScriptTarget.ES2020, module:ts.ModuleKind.None}, reportDiagnostics:true});
+  // Real typechecking, not just type-stripping — for a TS kata, "is this valid TS"
+  // is most of the question.
+  const files = {'k.ts': full, 'lib.d.ts': loaded.tsLib||''};
+  const host = {
+    getSourceFile:(n,l)=> files[n]!==undefined ? ts.createSourceFile(n, files[n], l) : undefined,
+    writeFile:()=>{}, getDefaultLibFileName:()=>'lib.d.ts', useCaseSensitiveFileNames:()=>true,
+    getCanonicalFileName:f=>f, getCurrentDirectory:()=>'', getNewLine:()=>'\n',
+    fileExists:f=>files[f]!==undefined, readFile:f=>files[f],
+  };
+  let typeErrs=[];
+  try{
+    const prog = ts.createProgram(['k.ts'], {noEmit:true, target:ts.ScriptTarget.ES2020, strict:false, noResolve:true}, host);
+    typeErrs = ts.getPreEmitDiagnostics(prog)
+      .filter(d=>d.file && d.file.fileName==='k.ts')
+      .map(d=>{
+        const pos = d.file.getLineAndCharacterOfPosition(d.start||0);
+        return `line ${pos.line+1}: ${ts.flattenDiagnosticMessageText(d.messageText,' ')}`;
+      });
+  }catch(_){}
+  const res = runJS(out.outputText, null);
+  res.typeErrs = typeErrs;
+  res.tested = !!test;
+  if(typeErrs.length) res.ok = false;
+  return res;
+}
+async function runSQL(code, setup){
+  const SQL = await needSQL();
+  const db = new SQL.Database();
+  try{
+    if(setup && setup.trim()) db.run(setup);
+    const res = db.exec(code);
+    db.close();
+    if(!res.length) return {ok:true, sql:true, rows:null};
+    const last = res[res.length-1];
+    return {ok:true, sql:true, cols:last.columns, rows:last.values};
+  }catch(e){
+    try{ db.close(); }catch(_){}
+    return {ok:false, sql:true, error:(e&&e.message)||String(e)};
+  }
+}
+async function runKata(k, code){
+  if(k.lang==='javascript') return runJS(code, k.test);
+  if(k.lang==='typescript') return runTS(code, k.test);
+  if(k.lang==='sql') return runSQL(code, k.setup);
+  return {ok:false, error:'No in-browser runtime for '+langLabel(k.lang)+' — compare against the answer instead.'};
+}
+function renderOut(res){
+  if(!res) return '';
+  let cls = res.ok ? 'pass' : 'fail';
+  let body = '';
+  if(res.typeErrs && res.typeErrs.length) body += `<span class="err">Type errors</span>\n${esc(res.typeErrs.join('\n'))}\n\n`;
+  if(res.sql){
+    if(res.error) body += `<span class="err">SQL error</span>\n${esc(res.error)}`;
+    else if(!res.rows) body += `<span class="ok">OK</span> — statement ran, no rows returned`;
+    else body += `<table><tr>${res.cols.map(c=>`<th>${esc(String(c))}</th>`).join('')}</tr>`
+      + res.rows.map(r=>`<tr>${r.map(v=>`<td>${esc(v===null?'NULL':String(v))}</td>`).join('')}</tr>`).join('') + `</table>`;
+    return `<div class="out ${cls}">${body}</div>`;
+  }
+  if(res.logs && res.logs.length) body += esc(res.logs.join('\n')) + '\n';
+  if(res.error) body += `<span class="err">${res.tested?'Test failed':'Error'}</span>\n${esc(res.error)}`;
+  else if(res.tested) body += `<span class="ok">✓ Test passed</span>`;
+  else if(!body) body += `<span class="ok">Ran clean</span> — no output`;
+  return `<div class="out ${cls}">${body.trim()}</div>`;
+}
+
+/* ---------- UI ---------- */
+const view = document.getElementById('view');
+let activeTab='today';
+const openForms = new Set();
+const openCats = new Set();
+const openTransfers = new Set();      // due pids showing their transfer sibling
+const pendingTransfer = new Map();    // sibling pid -> origin pid, for this session
+let allFilter='all', search='', gateOverride=false;
+const RLABEL = {cold:'Solved cold', hints:'Needed hints', video:'Watched video'};
+const RICON  = {cold:'⚡', hints:'💡', video:'▶'};
+function esc(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+function toast(msg){
+  const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show');
+  clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove('show'),2200);
+}
+
+function logFormHTML(p, s){
+  const pc=previewNext(s,'cold'), ph=previewNext(s,'hints'), pv=previewNext(s,'video');
+  const lastNote = [...attemptsFor(p.id)].reverse().find(a=>a.n);
+  const originPid = pendingTransfer.get(p.id);
+  const origin = originPid ? PROBLEMS.find(q=>q.id===originPid) : null;
+  return `<div class="logform" data-form="${p.id}">
+    <div class="result-btns">
+      <button class="rbtn" data-res="cold"><span class="rt"><span class="dot cold"></span>⚡ Solved cold</span><span class="rs">no help at all → review in ${pc}d (${nice(addDays(todayStr(),pc))})</span></button>
+      <button class="rbtn" data-res="hints"><span class="rt"><span class="dot hints"></span>💡 Needed hints</span><span class="rs">peeked at approach → redo in ${ph}d</span></button>
+      <button class="rbtn" data-res="video"><span class="rt"><span class="dot video"></span>▶ Watched video</span><span class="rs">couldn't solve it → redo tomorrow</span></button>
+    </div>
+    <div class="formrow">
+      <input type="number" min="0" max="600" placeholder="min" title="Minutes spent" data-mins>
+      <textarea placeholder="Notes — the key insight, the trap you fell into…" data-notes></textarea>
+      <button class="primary" data-save disabled>Log it</button>
+    </div>
+    <div class="kcapture">
+      <label>Have to look up any syntax or API? Capture it — you write the answer later, from the Katas tab.</label>
+      <div class="frow">
+        <input type="text" data-cap placeholder="e.g. counter map over a string[]">
+        <select data-caplang>${KLANGS.map(l=>`<option value="${l.id}">${l.label}</option>`).join('')}</select>
+      </div>
+    </div>
+    ${origin?`<label class="xfer-note"><input type="checkbox" data-xfer checked>
+      <span>Count this as a transfer rep for <strong>${esc(origin.name)}</strong> — solving an unseen problem in the same pattern is stronger evidence than re-solving one you've memorised, so it advances that card's schedule too.</span></label>`:''}
+    ${lastNote?`<details class="notes"><summary>Show my last notes (try to recall the approach first)</summary><div class="note-body">${esc(lastNote.n)}</div></details>`:''}
+    ${s.n?`<details class="notes"><summary>History (${s.n} attempt${s.n>1?'s':''} · ease ${s.ease.toFixed(2)})</summary><div class="history">${
+      [...attemptsFor(p.id)].reverse().map(a=>`<div class="hrow"><span class="hdate">${a.d.slice(5)}</span><span class="dot ${a.r}"></span> ${RLABEL[a.r]}${a.m?` · ${a.m}m`:''}<span class="hnote">${esc(a.n||'')}</span><button class="ghost hdel" data-del="${a.pid}|${a.d}|${a.r}" title="Delete this attempt">✕</button></div>`).join('')
+    }</div></details>`:''}
+  </div>`;
+}
+
+function probCard(p, s, opts){
+  opts = opts||{};
+  const open = openForms.has(p.id);
+  const leech = opts.leech ? leechInfo(p.id) : null;
+  let dueBit='';
+  if(s.n>0){
+    const over = diffDays(s.due, todayStr());
+    dueBit = over>0 ? `<span class="due-tag overdue">${over}d overdue</span>`
+           : over===0 ? `<span class="due-tag today">due today</span>`
+           : `<span class="due-tag later">due ${nice(s.due)}</span>`;
+  }
+  // First problem in a pattern you've never touched: worked examples beat struggling
+  // on first exposure (the expertise-reversal effect kicks in later, not now).
+  const firstOfPattern = opts.isNew && !touchedCats().has(p.cat);
+  const sib = opts.due ? transferSibling(p) : null;
+  const lastNote = leech ? [...attemptsFor(p.id)].reverse().find(a=>a.n) : null;
+
+  return `<div class="card${leech?' leech':''}" data-pid="${p.id}">
+    <div class="prob-head" data-toggle="${p.id}">
+      <span class="prob-name">${esc(p.name)}</span>
+      <span class="badge ${p.diff.toLowerCase()}">${p.diff}</span>
+      <span class="prob-meta">${esc(p.cat)}</span>
+      ${leech?`<span class="leech-tag">leech</span>`:''}
+      ${firstOfPattern?`<span class="newpat">new pattern</span>`:''}
+      ${s.last?`<span class="result-icon" title="last result">${RICON[s.last.r]} ${RLABEL[s.last.r]} · ${nice(s.last.d)}</span>`:''}
+      <span class="spacer"></span>
+      ${dueBit}
+      ${opts.isNew?`<button class="skipbtn" data-skip="${p.id}" title="Skip this one for good — it stops appearing in Up next">skip</button>`:''}
+      <a href="${p.nc}" target="_blank" rel="noopener" title="Open on NeetCode" onclick="event.stopPropagation()">solve ↗</a>
+    </div>
+    ${leech?`<div class="leech-box">
+      <strong>${leech.bad} of the last 3 attempts needed help.</strong> Another cold attempt will probably fail the same way — the approach hasn't encoded. Reformulate instead: state the key insight in one sentence, out loud, <em>then</em> write the code from that sentence.
+      ${lastNote?`<details class="notes" style="margin-top:8px"><summary>Reveal what you wrote last time (try to say it yourself first)</summary><div class="note-body">${esc(lastNote.n)}</div></details>`:''}
+    </div>`:''}
+    ${firstOfPattern?`<div class="leech-box">First problem in <strong>${esc(p.cat)}</strong>. You have no pattern to retrieve yet, so watching the walkthrough first is the efficient move — that's the worked-example effect, not cheating. Log it as ▶ and it comes back tomorrow for a real attempt.</div>`:''}
+    ${sib?`<div class="transfer">
+      <strong>Transfer test available.</strong> You've solved this cold twice — re-solving it now mostly tests recognition. Try <strong>${esc(sib.name)}</strong> instead: same pattern, never seen, which is what an interview actually asks of you.
+      <div style="margin-top:6px"><button class="linkbtn" data-xopen="${p.id}|${sib.id}">${openTransfers.has(p.id)?'Hide':'Swap in '+esc(sib.name)} </button></div>
+      ${openTransfers.has(p.id)?probCard(sib, pstate(sib), {}):''}
+    </div>`:''}
+    ${open?logFormHTML(p,s):''}
+  </div>`;
+}
+
+/* ---------- kata UI ---------- */
+const kataOpen = new Set(), kataRevealed = new Set();
+const kataDraft = new Map(), kataOut = new Map(), kataRuns = new Map();
+let kataEditing = null, kataAdding = false;
+
+function kataCard(k, s){
+  const open = kataOpen.has(k.id);
+  const draft = isDraft(k);
+  const leech = kLeech(k.id);
+  let dueBit='';
+  if(s.n>0){
+    const over = diffDays(s.due, todayStr());
+    dueBit = over>0 ? `<span class="due-tag overdue">${over}d overdue</span>`
+           : over===0 ? `<span class="due-tag today">due today</span>`
+           : `<span class="due-tag later">due ${nice(s.due)}</span>`;
+  } else if(!draft) dueBit = `<span class="due-tag later">new</span>`;
+
+  let body='';
+  if(open){
+    if(draft){
+      body = `<div class="kbody"><div class="leech-box">This is a capture, not a card yet — it needs an answer before it can enter the queue.
+        <div style="margin-top:8px"><button class="primary" data-kedit="${k.id}">Write the answer</button></div></div></div>`;
+    } else {
+      const revealed = kataRevealed.has(k.id);
+      const out = kataOut.get(k.id);
+      const runs = kataRuns.get(k.id)||0;
+      const suggested = out && out.ok && k.test ? (runs<=1?'instant':'slow') : null;
+      body = `<div class="kbody">`;
+      if(leech){
+        body += `<div class="leech-box"><strong>${leech.bad} of the last 3 reviews weren't instant.</strong> For a kata that usually means the card is asking two things at once — SuperMemo's minimum information principle. Split it into two narrower cards rather than drilling this one again.
+          <div style="margin-top:8px"><button class="iconbtn" data-kedit="${k.id}">Edit / split</button></div></div>`;
+      }
+      if(k.kind==='repo'){
+        body += `<div class="leech-box">Do this one in <strong>kata-typescript</strong>, not here — real editor, real test runner:
+          ${k.dsa?`<pre style="margin:8px 0 0; font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-size:12.5px; background:var(--page); border-radius:8px; padding:8px 10px; overflow-x:auto">npm run generate -- ${esc(k.dsa)}</pre>
+          <div style="margin-top:6px; font-size:12px; color:var(--ink-muted)">or <code>npm run due -- --generate</code> to scaffold everything due at once</div>`:''}
+          <div style="margin-top:6px">Implement until vitest passes, then grade honestly below.</div></div>`;
+      } else if(k.kind==='code'){
+        const val = kataDraft.has(k.id) ? kataDraft.get(k.id) : (k.starter||'');
+        body += `<textarea class="editor" data-keditor="${k.id}" spellcheck="false" placeholder="Write it from scratch…">${esc(val)}</textarea>
+        <div class="runrow">
+          ${canRun(k.lang)?`<button class="primary" data-krun="${k.id}">Run${k.test?' & test':''}</button>`:''}
+          <button class="iconbtn" data-kreveal="${k.id}">${revealed?'Hide':'Reveal'} answer</button>
+          <span class="hint">${canRun(k.lang)? (k.test?'⌘↵ to run — the test decides, not your gut':'⌘↵ to run') : langLabel(k.lang)+' can’t run in-browser — compare against the answer'}</span>
+        </div>
+        <div data-kout="${k.id}">${out?renderOut(out):''}</div>`;
+      } else {
+        body += `<div class="runrow"><button class="iconbtn" data-kreveal="${k.id}">${revealed?'Hide':'Reveal'} answer</button>
+          <span class="hint">Say it out loud before you reveal — thinking "yeah I know this" is not retrieval</span></div>`;
+      }
+      if(revealed) body += `<div class="reveal"><pre data-lang="${esc(k.lang)}">${esc(k.a)}</pre></div>`;
+      body += `<div class="kgrade">
+        ${['instant','slow','blank'].map(r=>`<button class="rbtn${suggested===r?' selected':''}" data-kres="${k.id}|${r}">
+          <span class="rt">${KRICON[r]} ${KRLABEL[r]}</span>
+          <span class="rs">next in ${kpreview(s,r)}d</span></button>`).join('')}
+      </div>`;
+      body += `<div style="margin-top:8px"><button class="ghost" data-kedit="${k.id}">Edit</button><button class="ghost" data-kdel="${k.id}">Delete</button></div>`;
+      body += `</div>`;
+    }
+  }
+  return `<div class="card kata${leech?' leech':''}" data-kid="${k.id}">
+    <div class="prob-head" data-ktoggle="${k.id}">
+      <span class="kq">${esc(k.q)}</span>
+      <span class="klang">${esc(langLabel(k.lang))}</span>
+      ${draft?`<span class="kdraft">needs answer</span>`:''}
+      ${leech?`<span class="leech-tag">leech</span>`:''}
+      ${k.src?`<span class="prob-meta">from ${esc((PROBLEMS.find(p=>p.id===k.src)||{}).name||'')}</span>`:''}
+      ${s.last?`<span class="result-icon">${KRICON[s.last.r]} ${KRLABEL[s.last.r]} · ${nice(s.last.d)}</span>`:''}
+      <span class="spacer"></span>
+      ${dueBit}
+    </div>${body}</div>`;
+}
+
+function kataFormHTML(){
+  const k = kataEditing ? kataById(kataEditing) : null;
+  const v = k||{q:'',a:'',lang:'typescript',kind:'code',test:'',setup:'',starter:''};
+  return `<div class="kaddform" data-kform>
+    <div class="frow">
+      <input type="text" data-kq placeholder="Prompt — one thing only, e.g. “counter map over a string[]”" value="${esc(v.q)}">
+      <select data-klang>${KLANGS.map(l=>`<option value="${l.id}"${v.lang===l.id?' selected':''}>${l.label}${l.run?' ▸ runnable':''}</option>`).join('')}</select>
+      <select data-kkind>
+        <option value="code"${v.kind==='code'?' selected':''}>Code — type it</option>
+        <option value="concept"${v.kind==='concept'?' selected':''}>Concept — reveal it</option>
+        <option value="repo"${v.kind==='repo'?' selected':''}>Repo drill — external</option>
+      </select>
+    </div>
+    <textarea class="editor" data-ka placeholder="The answer. For code katas this is your reference implementation.">${esc(v.a)}</textarea>
+    <details class="notes" style="margin-top:9px"><summary>Optional — starter stub, assertion, SQL setup</summary>
+      <div style="margin-top:8px">
+        <textarea class="editor" data-kstarter style="min-height:60px" placeholder="Starter stub pre-filled into the editor (optional)">${esc(v.starter||'')}</textarea>
+        <textarea class="editor" data-ktest style="min-height:60px; margin-top:8px" placeholder="Assertion for JS/TS — has assert(cond, msg) and eq(actual, expected). e.g. eq([...counter('aab')], [['a',2],['b',1]])">${esc(v.test||'')}</textarea>
+        <textarea class="editor" data-ksetup style="min-height:60px; margin-top:8px" placeholder="SQL setup — CREATE TABLE + INSERTs that run before your query">${esc(v.setup||'')}</textarea>
+      </div>
+    </details>
+    <div class="runrow">
+      <button class="primary" data-ksubmit>${k?'Save changes':'Add kata'}</button>
+      <button class="ghost" data-kcancel>Cancel</button>
+    </div>
+  </div>`;
+}
+
+function renderKatas(){
+  const due = kataDue();
+  const drafts = state.katas.filter(isDraft);
+  const rest = state.katas.filter(k=>!isDraft(k) && !due.some(x=>x.k.id===k.id));
+  let html='';
+  if(kataAdding || kataEditing) html += kataFormHTML();
+  else {
+    const dsaSeeded = DSA_SET.every(([n])=>state.katas.some(k=>k.dsa===n));
+    html += `<div style="margin-bottom:16px; display:flex; gap:8px; flex-wrap:wrap"><button class="primary" data-knew>+ New kata</button>${dsaSeeded?'':`<button class="iconbtn" data-kseed title="23 data-structure implementations, scheduled here, executed in ~/dev/kata-typescript">+ kata-machine DSA set</button>`}</div>`;
+  }
+
+  if(drafts.length){
+    html += `<h2>Captured — need answers <span class="badge">${drafts.length}</span></h2>
+    <p class="sub">Caught mid-problem. Write the answer and they join the rotation.</p>`;
+    html += drafts.map(k=>kataCard(k, kstate(k))).join('');
+  }
+  html += `<h2>Due now <span class="badge">${due.length}</span></h2>`;
+  html += due.length ? `<p class="sub">Mixed across languages on purpose — switching languages is the discrimination the work actually demands.</p>`+due.map(x=>kataCard(x.k,x.s)).join('')
+    : `<div class="empty">Nothing due. ${state.katas.length?'':'Add a kata, or capture one from a problem you’re logging.'}</div>`;
+  if(rest.length){
+    html += `<h2>Scheduled <span class="badge">${rest.length}</span></h2>`;
+    html += rest.map(k=>kataCard(k, kstate(k))).join('');
+  }
+  return html;
+}
+
+function renderToday(){
+  const due = dueList();
+  const leeches = leechList();
+  const t = todayStr();
+  const backlog = due.length + leeches.length;
+  const gated = backlog >= NEW_GATE && !gateOverride;
+  const newProbs = gated ? [] : newQueue(state.newPerDay||2);
+  const doneToday = state.log.filter(a=>a.d===t).length;
+  let html = '';
+
+  // Deliberately not gated by the problem backlog: when 10 reviews feel like too much,
+  // 90 seconds of katas is still showing up, and the streak stays honest.
+  const kdue = kataDue();
+  if(kdue.length){
+    html += `<h2>Warm-up <span class="badge">${kdue.length}</span></h2>
+    <p class="sub">Small stuff, 10 seconds each. Type it from scratch — recognising the answer isn't the same as producing it.</p>`;
+    html += kdue.slice(0,5).map(x=>kataCard(x.k,x.s)).join('');
+    if(kdue.length>5) html += `<div class="sub" style="margin:6px 0 0">+${kdue.length-5} more in the Katas tab</div>`;
+  }
+
+  if(leeches.length){
+    html += `<h2>Leeches <span class="badge">${leeches.length}</span></h2>
+    <p class="sub">These keep failing. Grinding them again wastes the rep — rebuild the idea first, then code it from the idea.</p>`;
+    html += leeches.map(x=>probCard(x.p, x.s, {leech:true})).join('');
+  }
+
+  html += `<h2>Reviews due <span class="badge">${due.length}</span></h2>
+  <p class="sub">Most overdue first. Try each one from a blank editor before peeking at your notes — the struggle is what builds retention.</p>`;
+  html += due.length ? due.map(x=>probCard(x.p,x.s,{due:true})).join('') : `<div class="empty">Review queue is clear 🎉 ${doneToday?`You've logged ${doneToday} attempt${doneToday>1?'s':''} today.`:'Pick up a new problem below.'}</div>`;
+
+  html += `<h2>Up next — new problems</h2>`;
+  if(gated){
+    html += `<div class="gate">
+      <strong>New problems paused — ${backlog} reviews are waiting.</strong>
+      <div class="gsub">Anki's rule, and it's the right one: adding new material on top of a backlog just grows the backlog. Clear these down to ${NEW_GATE-1} and the queue reopens by itself.</div>
+      <button class="iconbtn" data-gate>Add one anyway</button>
+    </div>`;
+  } else {
+    html += `<p class="sub">Mixed across patterns on purpose — interleaved practice beats working a category to completion, because recognising <em>which</em> pattern applies is the skill under test.</p><div class="newlist">`;
+    html += newProbs.length ? newProbs.map(p=>probCard(p, pstate(p), {isNew:true})).join('')
+      : `<div class="empty">Nothing left in the queue — every problem is either started or skipped.</div>`;
+    html += `</div>`;
+  }
+  return html;
+}
+
+function renderAll(){
+  const cats = [...new Set(PROBLEMS.map(p=>p.cat))];
+  const q = search.trim().toLowerCase();
+  let html = `<div class="searchrow">
+    <input type="search" placeholder="Search 150 problems…" value="${esc(search)}" id="searchBox">
+    <div class="filterchips">
+      ${['all','due','new','solid','leech','skipped'].map(f=>`<button class="fchip ${allFilter===f?'on':''}" data-filter="${f}">${f[0].toUpperCase()+f.slice(1)}</button>`).join('')}
+    </div></div>`;
+  for(const cat of cats){
+    let items = PROBLEMS.filter(p=>p.cat===cat).map(p=>({p, s:pstate(p)}));
+    const seen = items.filter(x=>x.s.n>0).length, tot=items.length;
+    if(q) items = items.filter(x=>x.p.name.toLowerCase().includes(q));
+    if(allFilter==='leech') items = items.filter(x=>leechInfo(x.p.id));
+    else if(allFilter==='skipped') items = items.filter(x=>isDismissed(x.p.id));
+    else if(allFilter!=='all') items = items.filter(x=> allFilter==='new' ? x.s.status==='new' : x.s.status===allFilter);
+    if((q||allFilter!=='all') && !items.length) continue;
+    const open = openCats.has(cat) || q || allFilter!=='all';
+    html += `<div class="cat-block"><div class="cat-head" data-cat="${esc(cat)}">
+      <span class="chev">${open?'▼':'▶'}</span><span class="cat-name">${esc(cat)}</span>
+      <span class="cat-mini" title="${seen}/${tot} attempted"><i style="width:${Math.round(seen/tot*100)}%"></i></span>
+      <span class="cat-count">${seen}/${tot}</span></div>`;
+    if(open){
+      html += `<table class="plist">` + items.map(x=>{
+        const {p,s}=x;
+        const skipped = isDismissed(p.id);
+        const dueTxt = skipped ? 'skipped' : s.n===0 ? '—' : (s.due<=todayStr() ? 'due now' : nice(s.due));
+        return `<tr data-row="${p.id}">
+          <td class="c-dot"><span class="dot ${s.status==='due'?(s.last?s.last.r:'video'):s.status}" title="${s.status}"></span></td>
+          <td>${esc(p.name)}${leechInfo(p.id)?' <span class="leech-tag">leech</span>':''}${skipped?` <button class="skipbtn" data-unskip="${p.id}" title="Put this back in the queue">un-skip</button>`:''}</td>
+          <td class="c-diff"><span class="badge ${p.diff.toLowerCase()}">${p.diff}</span></td>
+          <td class="c-n">${s.n||''}</td>
+          <td class="c-due">${dueTxt}</td>
+        </tr>` + (openForms.has(p.id)?`<tr class="formtr"><td colspan="5">${logFormHTML(p,s)}</td></tr>`:'');
+      }).join('') + `</table>`;
+    }
+    html += `</div>`;
+  }
+  return html;
+}
+
+function renderStats(){
+  const t = todayStr();
+  const states = PROBLEMS.map(p=>({p, s:pstate(p)}));
+  const seen = states.filter(x=>x.s.n>0).length;
+  const solid = states.filter(x=>x.s.n>0 && x.s.interval>=30).length;
+  const due = allDue().length;
+  const leeches = leechList().length;
+  const skipped = (state.dismissed||[]).length;
+  const mins = state.log.filter(a=>a.m).map(a=>a.m).sort((a,b)=>a-b);
+  const med = mins.length? mins[Math.floor(mins.length/2)] : 0;
+  const coldRate = (()=>{ const recent=state.log.slice(-20); if(!recent.length)return 0; return Math.round(100*recent.filter(a=>a.r==='cold').length/recent.length); })();
+  let html = `<div class="tiles">
+    <div class="tile"><div class="tv">${seen}<small> /150</small></div><div class="tl">problems attempted</div></div>
+    <div class="tile"><div class="tv">${solid}</div><div class="tl">solid (interval ≥ 30d)</div></div>
+    <div class="tile"><div class="tv">${due}</div><div class="tl">due today</div></div>
+    <div class="tile"><div class="tv">${streak()}<small> d</small></div><div class="tl">current streak</div></div>
+    <div class="tile"><div class="tv">${state.log.length}</div><div class="tl">total attempts</div></div>
+    <div class="tile"><div class="tv">${coldRate}<small>%</small></div><div class="tl">solved cold, last 20</div></div>
+    <div class="tile"><div class="tv">${leeches}</div><div class="tl">leeches (2 of last 3 needed help)</div></div>
+    <div class="tile"><div class="tv">${skipped}</div><div class="tl">skipped</div></div>
+    <div class="tile"><div class="tv">${state.katas.filter(k=>!isDraft(k)).length}</div><div class="tl">katas in rotation</div></div>
+    <div class="tile"><div class="tv">${state.katas.filter(isDraft).length}</div><div class="tl">captured, need answers</div></div>
+  </div>`;
+
+  html += `<h2>Progress by pattern</h2>
+  <div class="legend">
+    <span class="li"><span class="sw" style="background:var(--seq-650)"></span>solid (≥30d interval)</span>
+    <span class="li"><span class="sw" style="background:var(--seq-350)"></span>attempted</span>
+    <span class="li"><span class="sw" style="background:var(--chip-bg);border:1px solid var(--grid)"></span>not started</span>
+  </div><div class="bars">`;
+  for(const cat of [...new Set(PROBLEMS.map(p=>p.cat))]){
+    const items = states.filter(x=>x.p.cat===cat);
+    const tot=items.length, sn=items.filter(x=>x.s.n>0).length, sl=items.filter(x=>x.s.n>0&&x.s.interval>=30).length;
+    html += `<div class="brow"><span class="bl">${esc(cat)}</span>
+      <span class="btrack" role="img" aria-label="${cat}: ${sn} of ${tot} attempted, ${sl} solid">
+        <span class="bfill" style="width:${sn/tot*100}%"></span>
+        <span class="bfill solidpart" style="width:${sl/tot*100}%"></span>
+      </span><span class="bv">${sn}/${tot}</span></div>`;
+  }
+  html += `</div>`;
+
+  // 16-week heatmap
+  const counts = {}; state.log.forEach(a=>counts[a.d]=(counts[a.d]||0)+1);
+  const end = parse(t); const dow = end.getDay();
+  const start = new Date(end); start.setDate(start.getDate() - (15*7 + dow));
+  const ramp = ['var(--chip-bg)','var(--seq-100)','var(--seq-200)','var(--seq-350)','var(--seq-500)'];
+  let cells='';
+  for(let d=new Date(start); d<=end; d.setDate(d.getDate()+1)){
+    const ds=fmt(d), c=counts[ds]||0;
+    const lvl = c===0?0 : c===1?1 : c===2?2 : c<=4?3 : 4;
+    cells += `<span class="hcell" style="background:${ramp[lvl]}" title="${ds}: ${c} attempt${c===1?'':'s'}"></span>`;
+  }
+  html += `<h2>Activity — last 16 weeks</h2><div class="heat">${cells}</div>
+  <div class="heat-legend">0 ${ramp.map(r=>`<span class="hcell" style="background:${r}"></span>`).join('')} 5+</div>`;
+  return html;
+}
+
+function renderAbout(){
+  return `<div class="prose">
+  <h3>What this is</h3>
+  <p>A trainer for the <a href="https://neetcode.io/practice" target="_blank" rel="noopener">NeetCode 150</a> that schedules when you should <em>re-solve</em> each problem, using the two most robust findings in learning science: the <strong>spacing effect</strong> and the <strong>testing effect</strong>.</p>
+  <h3>The research, briefly</h3>
+  <p><strong>Spacing beats cramming.</strong> Cepeda, Pashler &amp; colleagues' meta-analysis of 254 comparisons found distributed practice reliably outperforms massed practice, and that the optimal gap between reviews <em>grows</em> with how long you want to remember something. Re-solving a problem days or weeks later — right around when you'd start to forget — is what makes the memory durable.</p>
+  <p><strong>Retrieval is the workout.</strong> Roediger &amp; Karpicke showed that <em>testing yourself</em> produces far better long-term retention than re-reading or re-watching. That's why this app asks you to re-solve from a blank editor, and hides your old notes behind a click — recalling the approach yourself is the rep. Watching the solution video again is the weakest form of practice, so it schedules the tightest redo.</p>
+  <p><strong>Difficulty is desirable.</strong> Bjork's "desirable difficulties" work shows that effortful, slightly-uncomfortable practice feels worse but sticks better. Struggling for 20 minutes before cracking it is a feature.</p>
+  <p><strong>Interleaving helps discrimination.</strong> Mixing patterns (Rohrer's interleaving studies) trains the skill interviews actually test — recognizing <em>which</em> pattern applies. Your review queue naturally interleaves old patterns while you push into new categories.</p>
+  <h3>How scheduling works (SM-2, adapted)</h3>
+  <p>Each problem carries an <em>ease factor</em> (starts at 2.5) and an <em>interval</em>. Your result sets the next review:</p>
+  <table class="sched-table">
+    <tr><th>Result</th><th>Next review</th><th>Ease</th></tr>
+    <tr><td>⚡ Solved cold</td><td>first time: 7 days; after that: interval × ease (7 → ~17 → ~40 → ~100d, capped at 120)</td><td>+0.05</td></tr>
+    <tr><td>💡 Needed hints</td><td>2 days</td><td>−0.15</td></tr>
+    <tr><td>▶ Watched video</td><td>tomorrow</td><td>−0.20</td></tr>
+  </table>
+  <p>Problems you find hard develop a low ease factor and come back more often; ones you own graduate to month-plus intervals. A problem is <strong>solid</strong> once its interval reaches 30 days. This evolves the sheet rule you were using (next-day for hints/video, +7 for cold) into expanding intervals, so the review load doesn't pile up linearly as you work through all 150.</p>
+  <h3>Four rules the queue enforces for you</h3>
+  <p><strong>1. New problems pause when the backlog hits ${NEW_GATE}.</strong> This is Anki's own guidance for an overdue pile: stop introducing new material until you've caught up, because new cards on top of a backlog compound it. The queue reopens on its own once you're back under the line.</p>
+  <p><strong>2. New problems arrive interleaved, not in NeetCode order.</strong> Rohrer, Dedrick, Hartwig &amp; Cheung ran a randomised controlled trial across 54 classrooms: interleaved practice beat blocked practice with an effect size of d ≈ 0.83. The mechanism is the point — when problems come blocked by pattern, you know the strategy before you've read the question. An interview never does that. So once you have ${INTERLEAVE_AFTER}+ patterns in play, no two consecutive new problems come from the same one.</p>
+  <p><strong>3. The first problem in a new pattern says "watch the video".</strong> Cognitive load theory's worked-example effect: for genuine novices, studying a solution beats struggling toward one. The effect reverses with expertise, which is why it only applies to your first contact with a pattern — everywhere else, struggle is the point.</p>
+  <p><strong>4. Repeated failures become leeches.</strong> Anki tags a card a leech when it keeps lapsing, and the fix is never "try harder" — it's to change how the thing is encoded. Here, 2 non-cold results in your last 3 attempts pulls a problem out of the normal queue and asks you to re-derive the insight in a sentence before you touch the keyboard. Two clean solves clears it.</p>
+  <h3>Transfer tests</h3>
+  <p>Once you've solved a problem cold twice, re-solving it mostly measures whether you remember <em>that problem</em>. So the card offers you an unseen sibling from the same pattern instead. Solving that cold is strictly stronger evidence than another rep on the one you've memorised, so it advances both cards' schedules. This is the closest thing the app has to a real interview: same pattern, no warning, blank editor.</p>
+  <h3>Katas — the second deck</h3>
+  <p>A NeetCode problem is a 30-minute problem-solving episode. "Counter map over a <code>string[]</code>" is an atomic fact you either produce in five seconds or you don't. Same spacing science, different parameters: katas start at a 2-day interval and stretch to a year, where problems floor at 7 days and cap at 120.</p>
+  <p><strong>You type the answer, you don't flip a card.</strong> Overt retrieval — actually producing the answer — beats covert retrieval, where you think "yeah, I know this" and flip. That gap is exactly the failure mode of AI-assisted fluency: reading a solution feels like knowing it. For JavaScript, TypeScript and SQL the app runs your code, so a kata can carry an assertion and correctness stops being self-reported. TypeScript katas are typechecked against a real standard library, not just stripped and run.</p>
+  <p><strong>Capture beats curation.</strong> The kata deck starts empty and fills from friction: every problem log form has one field for whatever you had to look up. It saves as a card that needs an answer, and stays out of the review queue until you write one. One field in the moment, authoring later.</p>
+  <p><strong>Repo drills bridge to kata-typescript.</strong> The 23 kata-machine data-structure implementations are scheduled here but executed there — real editor, real vitest. kata-machine's default is regenerating all 23 every day, which is massed practice; this deck only re-issues the ones that are actually decaying. <code>npm run due</code> in the repo reads your sync key and scaffolds exactly what's due.</p>
+  <p><strong>A kata leech means a broken card, not a weak memory.</strong> When a problem leeches, the pattern hasn't encoded. When a kata leeches it's nearly always asking two things at once — SuperMemo's minimum information principle, Rule 4. So the prompt is to split the card, not to drill it.</p>
+  <h3>A sane daily loop</h3>
+  <p>Leeches first (they're cheap — you're recalling an idea, not grinding code), then the review queue, then whatever new problems the gate lets through. Cap sessions at ~1 hour. Give a new problem 30–45 minutes before escalating, and escalate through hints rather than jumping to the solution — then re-solve it the next day, which is what turns recognising a solution into being able to generate one.</p>
+  <div class="refs">
+    Cepeda, Pashler, Vul, Wixted &amp; Rohrer (2006), <em>Distributed practice in verbal recall tasks</em>, Psych. Bulletin ·
+    Cepeda et al. (2008), <em>Spacing effects in learning: a temporal ridgeline of optimal retention</em>, Psych. Science ·
+    Roediger &amp; Karpicke (2006), <em>Test-enhanced learning</em>, Psych. Science ·
+    Bjork &amp; Bjork (2011), <em>Making things hard on yourself, but in a good way</em> ·
+    Rohrer &amp; Taylor (2007), <em>The shuffling of mathematics problems improves learning</em> ·
+    Rohrer, Dedrick, Hartwig &amp; Cheung (2020), <em>A randomized controlled trial of interleaved mathematics practice</em>, J. Educational Psychology ·
+    Wozniak, <em>Twenty rules of formulating knowledge</em> (minimum information principle) ·
+    Overt vs. covert retrieval: Putnam &amp; Roediger, <em>Retrieval mode distinguishes the testing effect from the generation effect</em> ·
+    Sweller, van Merriënboer &amp; Paas — worked-example effect &amp; expertise reversal ·
+    SM-2: Wozniak (1990), SuperMemo · leech handling and backlog policy after the Anki manual.
+  </div></div>`;
+}
+
+function render(){
+  const backlog = allDue().length;
+  document.getElementById('dueCnt').textContent = backlog;
+  document.getElementById('dueCnt').className = 'cnt' + (backlog? ' hot':'');
+  document.getElementById('streakVal').textContent = streak();
+  const kd = kataDue().length, kdr = state.katas.filter(isDraft).length;
+  document.getElementById('kataCnt').textContent = kd + kdr;
+  document.getElementById('kataCnt').className = 'cnt' + (kd? ' hot':'');
+  disposeKataEditors();
+  view.innerHTML = activeTab==='today'?renderToday(): activeTab==='katas'?renderKatas():
+    activeTab==='all'?renderAll(): activeTab==='stats'?renderStats(): renderAbout();
+  enhanceKataEditors();
+  if(activeTab==='all'){
+    const sb=document.getElementById('searchBox');
+    sb.addEventListener('input', e=>{ search=e.target.value; const pos=e.target.selectionStart; render(); const nb=document.getElementById('searchBox'); nb.focus(); nb.setSelectionRange(pos,pos); });
+  }
+}
+
+/* ---------- events ---------- */
+document.getElementById('tabs').addEventListener('click', e=>{
+  const b=e.target.closest('button[data-tab]'); if(!b) return;
+  activeTab=b.dataset.tab;
+  document.querySelectorAll('#tabs button').forEach(x=>x.classList.toggle('active',x===b));
+  render();
+});
+view.addEventListener('click', e=>{
+  const del = e.target.closest('[data-del]');
+  if(del){
+    const [pid,d,r]=del.dataset.del.split('|');
+    const i = state.log.findIndex(a=>a.pid==pid && a.d===d && a.r===r);
+    if(i>=0){ state.log.splice(i,1); state.deletedLog.push(`${pid}|${d}|${r}`); save(); toast('Attempt deleted'); render(); }
+    return;
+  }
+  /* ---- katas ---- */
+  if(e.target.closest('[data-knew]')){ kataAdding=true; kataEditing=null; render(); return; }
+  if(e.target.closest('[data-kseed]')){
+    const n = seedDSA();
+    toast(n ? `Added ${n} DSA drills — they schedule here, you solve them in kata-typescript` : 'DSA set already seeded');
+    render(); return;
+  }
+  if(e.target.closest('[data-kcancel]')){ kataAdding=false; kataEditing=null; render(); return; }
+  const kedit = e.target.closest('[data-kedit]');
+  if(kedit){ kataEditing=Number(kedit.dataset.kedit); kataAdding=false; activeTab='katas';
+    document.querySelectorAll('#tabs button').forEach(x=>x.classList.toggle('active', x.dataset.tab==='katas'));
+    render(); return; }
+  if(e.target.closest('[data-ksubmit]')){
+    const f = e.target.closest('[data-kform]');
+    const q = f.querySelector('[data-kq]').value.trim();
+    if(!q){ toast('Give it a prompt first'); return; }
+    const fields = {q, a:f.querySelector('[data-ka]').value, lang:f.querySelector('[data-klang]').value,
+      kind:f.querySelector('[data-kkind]').value, starter:f.querySelector('[data-kstarter]').value,
+      test:f.querySelector('[data-ktest]').value, setup:f.querySelector('[data-ksetup]').value};
+    if(kataEditing){ Object.assign(kataById(kataEditing), fields, {u: Date.now()}); toast('Kata updated'); }
+    else { state.katas.push({id: genId(), ...fields, u: Date.now(), src:null, created: todayStr()}); toast('Kata added'); }
+    kataAdding=false; kataEditing=null; save(); render(); return;
+  }
+  const kdel = e.target.closest('[data-kdel]');
+  if(kdel){
+    const kid=Number(kdel.dataset.kdel);
+    state.katas = state.katas.filter(k=>k.id!==kid);
+    state.klog = state.klog.filter(a=>a.kid!==kid);
+    state.kataTombs.push(kid);
+    save(); toast('Kata deleted'); render(); return;
+  }
+  const kres = e.target.closest('[data-kres]');
+  if(kres){
+    const [kid,r] = kres.dataset.kres.split('|'); const id=Number(kid);
+    state.klog.push({kid:id, d:todayStr(), r});
+    kataOpen.delete(id); kataRevealed.delete(id); kataDraft.delete(id); kataOut.delete(id); kataRuns.delete(id);
+    save();
+    const s = kstate(kataById(id));
+    toast(`${KRLABEL[r]} — back ${s.interval===1?'tomorrow':'in '+s.interval+' days'}`);
+    render(); return;
+  }
+  const krev = e.target.closest('[data-kreveal]');
+  if(krev){ const id=Number(krev.dataset.kreveal); kataRevealed.has(id)?kataRevealed.delete(id):kataRevealed.add(id); render(); return; }
+  const krun = e.target.closest('[data-krun]');
+  if(krun){ runKataFromUI(Number(krun.dataset.krun)); return; }
+  const ktog = e.target.closest('[data-ktoggle]');
+  if(ktog){
+    const id=Number(ktog.dataset.ktoggle);
+    kataOpen.has(id)?kataOpen.delete(id):kataOpen.add(id);
+    render(); return;
+  }
+  const skip = e.target.closest('[data-skip]');
+  if(skip){
+    const pid = Number(skip.dataset.skip);
+    state.dismissed.push(pid); state.prefT = Date.now(); save();
+    openForms.delete(pid);
+    toast(`Skipped ${PROBLEMS.find(p=>p.id===pid).name} — un-skip it from All problems`);
+    render(); return;
+  }
+  const unskip = e.target.closest('[data-unskip]');
+  if(unskip){
+    const pid = Number(unskip.dataset.unskip);
+    state.dismissed = state.dismissed.filter(x=>x!==pid); state.prefT = Date.now(); save();
+    toast('Back in the queue'); render(); return;
+  }
+  if(e.target.closest('[data-gate]')){ gateOverride=true; render(); return; }
+  const xopen = e.target.closest('[data-xopen]');
+  if(xopen){
+    const [orig, sib] = xopen.dataset.xopen.split('|').map(Number);
+    if(openTransfers.has(orig)){ openTransfers.delete(orig); pendingTransfer.delete(sib); openForms.delete(sib); }
+    else { openTransfers.add(orig); pendingTransfer.set(sib, orig); openForms.add(sib); }
+    render(); return;
+  }
+  const head = e.target.closest('[data-toggle]');
+  const row = e.target.closest('tr[data-row]');
+  if(head || row){
+    if(e.target.closest('a')) return;
+    const pid = Number(head?head.dataset.toggle:row.dataset.row);
+    openForms.has(pid) ? openForms.delete(pid) : openForms.add(pid);
+    render(); return;
+  }
+  const cat = e.target.closest('.cat-head');
+  if(cat){ const c=cat.dataset.cat; openCats.has(c)?openCats.delete(c):openCats.add(c); render(); return; }
+  const fchip = e.target.closest('[data-filter]');
+  if(fchip){ allFilter=fchip.dataset.filter; render(); return; }
+  const rbtn = e.target.closest('.rbtn');
+  if(rbtn){
+    const form = rbtn.closest('[data-form]');
+    form.querySelectorAll('.rbtn').forEach(b=>b.classList.toggle('selected',b===rbtn));
+    form.querySelector('[data-save]').disabled=false;
+    return;
+  }
+  const saveBtn = e.target.closest('[data-save]');
+  if(saveBtn){
+    const form = saveBtn.closest('[data-form]');
+    const pid = Number(form.dataset.form);
+    const sel = form.querySelector('.rbtn.selected'); if(!sel) return;
+    const r = sel.dataset.res;
+    const m = Number(form.querySelector('[data-mins]').value)||null;
+    const n = form.querySelector('[data-notes]').value.trim();
+    state.log.push({pid, d:todayStr(), r, m, n});
+
+    // Transfer rep: solving an unseen sibling cold also advances the problem it stood in for.
+    const xfer = form.querySelector('[data-xfer]');
+    const originPid = pendingTransfer.get(pid);
+    let xferName = null;
+    if(xfer && xfer.checked && originPid){
+      const origin = PROBLEMS.find(q=>q.id===originPid);
+      state.log.push({pid:originPid, d:todayStr(), r, m:null, n:`Transfer rep — ${RLABEL[r].toLowerCase()} on ${PROBLEMS.find(q=>q.id===pid).name}`});
+      pendingTransfer.delete(pid); openTransfers.delete(originPid);
+      xferName = origin.name;
+    }
+    // Capture friction is the whole game — one field, in the flow you're already in.
+    const cap = form.querySelector('[data-cap]');
+    let capName = null;
+    if(cap && cap.value.trim()){
+      state.katas.push({id: genId(), q: cap.value.trim(), a:'', lang: form.querySelector('[data-caplang]').value,
+        kind:'code', test:'', setup:'', starter:'', u: Date.now(), src: pid, created: todayStr()});
+      capName = cap.value.trim();
+    }
+    save();
+    openForms.delete(pid);
+    const s = pstate(PROBLEMS.find(p=>p.id===pid));
+    toast(`Logged ${RLABEL[r].toLowerCase()} — back ${s.interval===1?'tomorrow':'in '+s.interval+' days'} (${nice(s.due)})${xferName?` · credited ${xferName}`:''}${capName?` · captured “${capName}”`:''}`);
+    render(); return;
+  }
+});
+/* ---- kata editor: keep drafts across re-renders, run without losing focus ---- */
+view.addEventListener('input', e=>{
+  const ed = e.target.closest('[data-keditor]');
+  if(ed) kataDraft.set(Number(ed.dataset.keditor), ed.value);
+});
+view.addEventListener('keydown', e=>{
+  const ed = e.target.closest('[data-keditor]');
+  if(!ed) return;
+  if(e.key==='Tab'){
+    e.preventDefault();
+    const s=ed.selectionStart, en=ed.selectionEnd;
+    ed.value = ed.value.slice(0,s) + '  ' + ed.value.slice(en);
+    ed.selectionStart = ed.selectionEnd = s+2;
+    kataDraft.set(Number(ed.dataset.keditor), ed.value);
+  } else if(e.key==='Enter' && (e.metaKey||e.ctrlKey)){
+    e.preventDefault();
+    runKataFromUI(Number(ed.dataset.keditor));
+  }
+});
+async function runKataFromUI(kid){
+  const k = kataById(kid); if(!k) return;
+  const med = monacoEds.get(kid);
+  const ed = view.querySelector(`[data-keditor="${kid}"]`);
+  const code = med ? med.getValue() : ed ? ed.value : (kataDraft.get(kid)||'');
+  const slot = view.querySelector(`[data-kout="${kid}"]`);
+  if(slot) slot.innerHTML = `<div class="out">Running…</div>`;
+  kataRuns.set(kid, (kataRuns.get(kid)||0)+1);
+  let res;
+  try{ res = await runKata(k, code); }
+  catch(err){ res = {ok:false, error:(err&&err.message)||String(err)}; }
+  kataOut.set(kid, res);
+  const slot2 = view.querySelector(`[data-kout="${kid}"]`);
+  if(slot2) slot2.innerHTML = renderOut(res);
+  // A passing assertion is objective evidence, so pre-select the grade rather than
+  // making you rate yourself after seeing it work.
+  if(res.ok && k.test){
+    const want = (kataRuns.get(kid)||1) <= 1 ? 'instant' : 'slow';
+    view.querySelectorAll(`[data-kres^="${kid}|"]`).forEach(b=>b.classList.toggle('selected', b.dataset.kres===`${kid}|${want}`));
+  }
+}
+
+/* ---- sync UI ---- */
+const syncbar = document.getElementById('syncbar');
+function paintSyncbar(){
+  if(syncbar.style.display==='none') return;
+  const key = syncKey();
+  if(!key){
+    syncbar.innerHTML = `<strong>Cross-device sync is off.</strong> Your log lives only in this browser.
+      Turning it on stores the merged log on your Convex backend, keyed by a random 128-bit link — anyone with the link has the data, so share it only with your own devices.
+      <div class="srow"><button class="primary" data-syncon>Turn on sync</button></div>`;
+  } else {
+    const link = location.origin.startsWith('http') ? `${location.origin}${location.pathname}#k=${key}` : `https://neetcode-spaced-reps.vercel.app/#k=${key}`;
+    syncbar.innerHTML = `<strong>Sync is on.</strong> Open this link once on another device and the two logs merge — attempts union, deletions stick, newest kata edit wins.
+      <div class="srow"><input type="text" readonly value="${esc(link)}" id="pairLink"><button class="iconbtn" data-synccopy>Copy</button></div>
+      <div class="srow"><button class="iconbtn" data-syncnow>Sync now</button><button class="ghost" data-syncoff>Turn off on this device (keeps local data)</button></div>`;
+  }
+}
+document.getElementById('syncBtn').addEventListener('click', ()=>{
+  syncbar.style.display = syncbar.style.display==='none' ? '' : 'none';
+  paintSyncbar();
+});
+syncbar.addEventListener('click', e=>{
+  if(e.target.closest('[data-syncon]')){
+    localStorage.setItem(SYNC_KEY_LS, newSyncKey());
+    paintSyncbar(); syncNow(); toast('Sync on — open the link on your other device');
+  } else if(e.target.closest('[data-synccopy]')){
+    const inp=document.getElementById('pairLink'); inp.select();
+    navigator.clipboard?.writeText(inp.value).then(()=>toast('Pairing link copied'),()=>document.execCommand('copy'));
+  } else if(e.target.closest('[data-syncnow]')){
+    syncNow(); toast('Syncing…');
+  } else if(e.target.closest('[data-syncoff]')){
+    localStorage.removeItem(SYNC_KEY_LS); syncState='off';
+    paintSync(); paintSyncbar(); toast('Sync off — local data untouched');
+  }
+});
+
+/* export / import / theme */
+document.getElementById('exportBtn').addEventListener('click', ()=>{
+  const blob = new Blob([JSON.stringify(state,null,2)],{type:'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download=`neetcode-spaced-reps-${todayStr()}.json`; a.click();
+});
+document.getElementById('importBtn').addEventListener('click', ()=>document.getElementById('importFile').click());
+document.getElementById('importFile').addEventListener('change', e=>{
+  const f=e.target.files[0]; if(!f) return;
+  const rd=new FileReader();
+  rd.onload=()=>{ try{ const d=JSON.parse(rd.result); if(!Array.isArray(d.log)) throw 0; state=migrate(d); save(); toast('Log imported'); render(); }catch(_){ toast('Not a valid backup file'); } };
+  rd.readAsText(f);
+});
+document.getElementById('themeBtn').addEventListener('click', ()=>{
+  const cur = localStorage.getItem('ncsr-theme') || (matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');
+  const next = cur==='dark'?'light':'dark';
+  localStorage.setItem('ncsr-theme', next);
+  document.documentElement.dataset.theme = next;
+  if(monacoState==='ready') window.monaco.editor.setTheme(monacoTheme());
+});
+(function(){ const t=localStorage.getItem('ncsr-theme'); if(t) document.documentElement.dataset.theme=t; })();
+
+load();
+const paired = adoptFragmentKey();
+render();
+if(syncKey()){ syncNow().then(()=>{ if(paired) toast('Paired — logs merged'); }); }
+</script>
+</body>
+</html>

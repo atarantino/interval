@@ -316,8 +316,11 @@ input[type=search]{flex:1; min-width:200px}
   position:fixed; bottom:22px; left:50%; transform:translateX(-50%);
   background:var(--ink-1); color:var(--page); padding:9px 18px; border-radius:10px; font-size:13.5px;
   opacity:0; transition:opacity .25s; pointer-events:none; z-index:50; font-weight:600;
+  max-width:min(92vw,480px); text-align:center;
 }
 .toast.show{opacity:1}
+.toast.rich{pointer-events:auto}
+.toast a{color:inherit}
 .newlist .card{padding:10px 16px}
 @media (max-width:560px){ .brow .bl{width:110px} }
 </style>
@@ -1020,9 +1023,11 @@ const RLABEL = {cold:'Solved cold', hints:'Needed hints', video:'Watched video'}
 const RICON  = {cold:'⚡', hints:'💡', video:'▶'};
 function esc(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
-function toast(msg){
-  const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show');
-  clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove('show'),2200);
+function toast(msg, opts){
+  const t=document.getElementById('toast');
+  if(opts&&opts.html){ t.innerHTML=msg; t.classList.add('rich'); } else { t.textContent=msg; t.classList.remove('rich'); }
+  t.classList.add('show');
+  clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove('show','rich'),(opts&&opts.ms)||2200);
 }
 
 function logFormHTML(p, s){
@@ -1883,7 +1888,8 @@ function paintSyncbar(){
     const link = location.origin.startsWith('http') ? `${location.origin}${location.pathname}#k=${key}` : `https://intervalreps.vercel.app/#k=${key}`;
     syncbar.innerHTML = `<strong>Sync is on.</strong> Open this link once on another device and the two logs merge — attempts union, deletions stick, newest deck edit wins.
       <div class="srow"><input type="text" readonly value="${esc(link)}" id="pairLink"><button class="iconbtn" data-synccopy>Copy</button></div>
-      <div class="srow"><button class="iconbtn" data-syncnow>Sync now</button><button class="ghost" data-syncoff>Turn off on this device (keeps local data)</button></div>`;
+      <div class="srow"><button class="iconbtn" data-syncnow>Sync now</button><button class="ghost" data-syncoff>Turn off on this device (keeps local data)</button></div>
+      <span class="kofi-nudge">Sync runs on a small backend I pay for out of pocket — if it earns its keep, <a href="https://ko-fi.com/adamtarantino" target="_blank" rel="noopener">buy me a coffee ☕</a></span>`;
   }
 }
 document.getElementById('syncBtn').addEventListener('click', ()=>{
@@ -1930,7 +1936,12 @@ document.getElementById('themeBtn').addEventListener('click', ()=>{
 load();
 const paired = adoptFragmentKey();
 render();
-if(syncKey()){ syncNow().then(()=>{ if(paired) toast('Paired — logs merged'); }); }
+function pairedToast(){
+  if(localStorage.getItem('ncsr-kofi-paired')) return toast('Paired — logs merged');
+  localStorage.setItem('ncsr-kofi-paired','1');
+  toast('Paired — logs merged ✓ Sync runs on a backend I pay for — <a href="https://ko-fi.com/adamtarantino" target="_blank" rel="noopener">buy me a coffee ☕</a> if it earns its keep', {html:true, ms:8000});
+}
+if(syncKey()){ syncNow().then(()=>{ if(paired) pairedToast(); }); }
 </script>
 </body>
 </html>

@@ -256,7 +256,7 @@ input[type=search]{flex:1; min-width:200px}
   color:var(--ink-2); background:var(--page); border:1px solid var(--ring); border-radius:8px; padding:7px 10px;
 }
 .syncbar strong{color:var(--ink-1)}
-/* ---- katas ---- */
+/* ---- recall + katas ---- */
 .kata .prob-head{cursor:pointer}
 .kq{font-weight:600; font-size:15px}
 .klang{font-size:11px; font-weight:700; padding:1px 8px; border-radius:999px; background:var(--blue-soft); color:var(--seq-650)}
@@ -336,7 +336,8 @@ input[type=search]{flex:1; min-width:200px}
   <div id="syncbar" class="syncbar" style="display:none"></div>
   <nav class="tabs" id="tabs">
     <button data-tab="today" class="active">Today <span class="cnt" id="dueCnt">0</span></button>
-    <button data-tab="katas">Katas <span class="cnt" id="kataCnt">0</span></button>
+    <button data-tab="recall">Recall <span class="cnt" id="recallCnt">0</span></button>
+    <button data-tab="drills">Katas <span class="cnt" id="drillCnt">0</span></button>
     <button data-tab="all">All problems</button>
     <button data-tab="stats">Stats</button>
     <button data-tab="about">Method</button>
@@ -418,7 +419,7 @@ function migrate(st){
 function touchPref(name){
   state.prefTs[name]=Date.now();
 }
-/* Kata ids used to be a counter — two offline devices would both mint id 5 and the
+/* Deck item ids used to be a counter — two offline devices would both mint id 5 and the
    merge would clobber one. Time+jitter keeps ids numeric (handlers Number() them);
    the uniqueness loop matters when minting many in one millisecond (bulk seeding
    drew duplicates from the 1000-value jitter alone). */
@@ -648,12 +649,11 @@ function streak(){
   return s;
 }
 
-/* ---------- katas ----------
-   A different learning object from a NeetCode problem, so a different scheduler.
-   A problem is a 30-minute episode; a kata is an atomic fact you either produce in
-   five seconds or you don't. That means a short first interval and a high ceiling,
-   where problems want a 7-day floor and a 120-day cap.
-------------------------------- */
+/* ---------- recall + katas ----------
+   Three learning objects, three tempos: a problem is a 30-minute episode, a recall
+   card is a five-second production, and a kata is a 10-minute implementation form.
+   They share storage and grading mechanics, but spacing follows the cost of the rep.
+---------------------------------------- */
 const KLANGS = [
   {id:'javascript', label:'JavaScript', run:true},
   {id:'typescript', label:'TypeScript', run:true},
@@ -671,11 +671,13 @@ const canRun = id => !!(KLANGS.find(l=>l.id===id)||{}).run;
 
 function kataById(kid){ return state.katas.find(k=>k.id===kid); }
 function kAttempts(kid){ return state.klog.filter(a=>a.kid===kid).sort((a,b)=>a.d<b.d?-1:1); }
-/* A kata with no answer yet is a capture, not a card — it stays out of the queue
+const isDrill = k => k?.kind==='repo';
+const trackKatas = track => state.katas.filter(k=>track==='drills' ? isDrill(k) : !isDrill(k));
+/* A recall item with no answer yet is a capture, not a card — it stays out of the queue
    until you write the answer. Capture should cost one field in the moment; authoring
    is a separate, slower act. Repo drills are the exception: their "answer" is a real
    implementation in an external repo, so they're never drafts. */
-function isDraft(k){ return k.kind!=='repo' && (!k.a || !k.a.trim()); }
+function isDraft(k){ return !isDrill(k) && (!k.a || !k.a.trim()); }
 
 /* The kata-machine DSA set (mirrors ligma.config.ts in ~/dev/kata-typescript).
    These are repo drills: the app schedules them, the repo executes them — kata-machine's
@@ -719,17 +721,20 @@ function seedDSA(){
   return added;
 }
 
-function kschedule(attempts){
+function kschedule(attempts, kind){
+  const drill = kind==='repo';
   let ease=2.5, interval=0, due=null;
   for(const a of attempts){
     if(a.r==='instant'){
-      interval = interval===0 ? 2 : Math.min(365, Math.max(2, Math.round(interval*ease)));
+      interval = drill
+        ? (interval===0 ? 7 : Math.min(180, Math.max(7, Math.round(interval*ease))))
+        : (interval===0 ? 2 : Math.min(365, Math.max(2, Math.round(interval*ease))));
       ease = Math.min(3.0, ease+0.05);
     } else if(a.r==='slow'){
-      interval = Math.max(1, Math.round(interval*1.2));
+      interval = Math.max(drill?3:1, Math.round(interval*1.2));
       ease = Math.max(1.3, ease-0.10);
     } else {
-      interval = 1;
+      interval = drill?2:1;
       ease = Math.max(1.3, ease-0.25);
     }
     due = addDays(a.d, interval);
@@ -739,33 +744,37 @@ function kschedule(attempts){
 function kstate(k){
   const at = kAttempts(k.id);
   if(!at.length) return {status:'new', n:0, due:null, interval:0, ease:2.5, last:null};
-  const s = kschedule(at);
+  const s = kschedule(at, k.kind);
   return {status: s.due<=todayStr() ? 'due' : (s.interval>=60?'solid':'scheduled'), ...s};
 }
-function kpreview(st, r){
+function kpreview(k, st, r){
+  const drill = isDrill(k);
   const {ease=2.5, interval=0} = st.n? st : {};
-  if(r==='instant') return interval===0 ? 2 : Math.min(365, Math.max(2, Math.round(interval*ease)));
-  if(r==='slow') return Math.max(1, Math.round(interval*1.2));
-  return 1;
+  if(r==='instant') return drill
+    ? (interval===0 ? 7 : Math.min(180, Math.max(7, Math.round(interval*ease))))
+    : (interval===0 ? 2 : Math.min(365, Math.max(2, Math.round(interval*ease))));
+  if(r==='slow') return Math.max(drill?3:1, Math.round(interval*1.2));
+  return drill?2:1;
 }
-/* When a problem leeches, the pattern hasn't encoded. When a kata leeches it's almost
-   always a malformed card — asking two things at once. SuperMemo's minimum information
-   principle: the fix is to split it, not to drill it harder. */
+/* The same leech signal needs a different prescription: split malformed recall cards;
+   rebuild the mental model behind an implementation form. */
 function kLeech(kid){
   const at = kAttempts(kid);
   if(at.length < 3) return null;
   const bad = at.slice(-3).filter(a=>a.r!=='instant').length;
   return bad >= 2 ? {bad} : null;
 }
-function kataDue(){
+function kataDue(track){
+  const deck = trackKatas(track);
   const t = todayStr();
-  const due = state.katas.filter(k=>!isDraft(k)).map(k=>({k, s:kstate(k)}))
+  const due = deck.filter(k=>!isDraft(k)).map(k=>({k, s:kstate(k)}))
     .filter(x=>x.s.n>0 && x.s.due<=t)
     .sort((a,b)=> a.s.due<b.s.due?-1 : a.s.due>b.s.due?1 : 0);
-  const fresh = state.katas.filter(k=>!isDraft(k) && kAttempts(k.id).length===0).map(k=>({k, s:kstate(k)}));
-  return interleaveLang([...due, ...fresh]);
+  const fresh = deck.filter(k=>!isDraft(k) && kAttempts(k.id).length===0).map(k=>({k, s:kstate(k)}));
+  const queue = [...due, ...fresh];
+  return track==='recall' ? interleaveLang(queue) : queue;
 }
-/* Same Rohrer logic as the problem queue: five TypeScript katas in a row lets you
+/* Same Rohrer logic as the problem queue: five TypeScript recall cards in a row lets you
    coast on primed context. Switching languages is the discrimination the job asks for. */
 function interleaveLang(items){
   if(new Set(items.map(x=>x.k.lang)).size < 2) return items;
@@ -919,7 +928,7 @@ async function runTS(code, test){
   const ts = await needTS();
   const full = code + (test?`\n;{\n${test}\n}`:'');
   const out = ts.transpileModule(full, {compilerOptions:{target:ts.ScriptTarget.ES2020, module:ts.ModuleKind.None}, reportDiagnostics:true});
-  // Real typechecking, not just type-stripping — for a TS kata, "is this valid TS"
+  // Real typechecking, not just type-stripping — for a TS recall card, "is this valid TS"
   // is most of the question.
   const files = {'k.ts': full, 'lib.d.ts': loaded.tsLib||''};
   const host = {
@@ -1021,7 +1030,7 @@ function logFormHTML(p, s){
       <button class="primary" data-save disabled>Log it</button>
     </div>
     <div class="kcapture">
-      <label>Have to look up any syntax or API? Capture it — you write the answer later, from the Katas tab.</label>
+      <label>Have to look up any syntax or API? Capture it — you write the answer later, from Recall.</label>
       <div class="frow">
         <input type="text" data-cap placeholder="e.g. counter map over a string[]">
         <select data-caplang>${KLANGS.map(l=>`<option value="${l.id}">${l.label}</option>`).join('')}</select>
@@ -1081,7 +1090,7 @@ function probCard(p, s, opts){
   </div>`;
 }
 
-/* ---------- kata UI ---------- */
+/* ---------- recall + kata UI ---------- */
 const kataOpen = new Set(), kataRevealed = new Set();
 const kataDraft = new Map(), kataOut = new Map(), kataRuns = new Map();
 let kataEditing = null, kataAdding = false;
@@ -1110,14 +1119,17 @@ function kataCard(k, s){
       const suggested = out && out.ok && k.test ? (runs<=1?'instant':'slow') : null;
       body = `<div class="kbody">`;
       if(leech){
-        body += `<div class="leech-box"><strong>${leech.bad} of the last 3 reviews weren't instant.</strong> For a kata that usually means the card is asking two things at once — SuperMemo's minimum information principle. Split it into two narrower cards rather than drilling this one again.
-          <div style="margin-top:8px"><button class="iconbtn" data-kedit="${k.id}">Edit / split</button></div></div>`;
+        body += isDrill(k)
+          ? `<div class="leech-box"><strong>${leech.bad} of the last 3 reviews weren't instant.</strong> This form hasn't encoded yet. Re-derive the algorithm on paper or reread the reference implementation before burning another rep; splitting doesn't apply to an implementation form.
+            <div style="margin-top:8px"><button class="iconbtn" data-kedit="${k.id}">Edit drill</button></div></div>`
+          : `<div class="leech-box"><strong>${leech.bad} of the last 3 reviews weren't instant.</strong> This recall card is probably asking two things at once — SuperMemo's minimum information principle. Split it into two narrower cards rather than drilling this one again.
+            <div style="margin-top:8px"><button class="iconbtn" data-kedit="${k.id}">Edit / split</button></div></div>`;
       }
-      if(k.kind==='repo'){
+      if(isDrill(k)){
         body += `<div class="leech-box">Do this one in <strong>kata-typescript</strong>, not here — real editor, real test runner:
           ${k.dsa?`<pre style="margin:8px 0 0; font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-size:12.5px; background:var(--page); border-radius:8px; padding:8px 10px; overflow-x:auto">npm run generate -- ${esc(k.dsa)}</pre>
           <div style="margin-top:6px; font-size:12px; color:var(--ink-muted)">or <code>npm run due -- --generate</code> to scaffold everything due at once</div>`:''}
-          <div style="margin-top:6px">Implement until vitest passes, then grade honestly below.</div></div>`;
+          <div style="margin-top:6px">Implement until vitest passes, then grade the hesitation: <strong>Instant</strong> means you typed it without stopping, not merely that the wall-clock time looked good.</div></div>`;
       } else if(k.kind==='code'){
         const val = kataDraft.has(k.id) ? kataDraft.get(k.id) : (k.starter||'');
         body += `<textarea class="editor" data-keditor="${k.id}" spellcheck="false" placeholder="Write it from scratch…">${esc(val)}</textarea>
@@ -1135,7 +1147,7 @@ function kataCard(k, s){
       body += `<div class="kgrade">
         ${['instant','slow','blank'].map(r=>`<button class="rbtn${suggested===r?' selected':''}" data-kres="${k.id}|${r}">
           <span class="rt">${KRICON[r]} ${KRLABEL[r]}</span>
-          <span class="rs">next in ${kpreview(s,r)}d</span></button>`).join('')}
+          <span class="rs">next in ${kpreview(k,s,r)}d</span></button>`).join('')}
       </div>`;
       body += `<div style="margin-top:8px"><button class="ghost" data-kedit="${k.id}">Edit</button><button class="ghost" data-kdel="${k.id}">Delete</button></div>`;
       body += `</div>`;
@@ -1154,20 +1166,22 @@ function kataCard(k, s){
     </div>${body}</div>`;
 }
 
-function kataFormHTML(){
+function kataFormHTML(track){
   const k = kataEditing ? kataById(kataEditing) : null;
   const v = k||{q:'',a:'',lang:'typescript',kind:'code',test:'',setup:'',starter:''};
+  const drill = track==='drills' || isDrill(v);
   return `<div class="kaddform" data-kform>
     <div class="frow">
       <input type="text" data-kq placeholder="Prompt — one thing only, e.g. “counter map over a string[]”" value="${esc(v.q)}">
       <select data-klang>${KLANGS.map(l=>`<option value="${l.id}"${v.lang===l.id?' selected':''}>${l.label}${l.run?' ▸ runnable':''}</option>`).join('')}</select>
       <select data-kkind>
-        <option value="code"${v.kind==='code'?' selected':''}>Code — type it</option>
-        <option value="concept"${v.kind==='concept'?' selected':''}>Concept — reveal it</option>
-        <option value="repo"${v.kind==='repo'?' selected':''}>Repo drill — external</option>
+        ${drill
+          ? `<option value="repo" selected>Repository kata — external</option>`
+          : `<option value="code"${v.kind==='code'?' selected':''}>Code — type it</option>
+             <option value="concept"${v.kind==='concept'?' selected':''}>Concept — reveal it</option>`}
       </select>
     </div>
-    <textarea class="editor" data-ka placeholder="The answer. For code katas this is your reference implementation.">${esc(v.a)}</textarea>
+    <textarea class="editor" data-ka placeholder="${drill?'Optional notes about the form.':'The answer. For code recall, this is your reference implementation.'}">${esc(v.a)}</textarea>
     <details class="notes" style="margin-top:9px"><summary>Optional — starter stub, assertion, SQL setup</summary>
       <div style="margin-top:8px">
         <textarea class="editor" data-kstarter style="min-height:60px" placeholder="Starter stub pre-filled into the editor (optional)">${esc(v.starter||'')}</textarea>
@@ -1176,31 +1190,51 @@ function kataFormHTML(){
       </div>
     </details>
     <div class="runrow">
-      <button class="primary" data-ksubmit>${k?'Save changes':'Add kata'}</button>
+      <button class="primary" data-ksubmit>${k?'Save changes':'Add recall'}</button>
       <button class="ghost" data-kcancel>Cancel</button>
     </div>
   </div>`;
 }
 
-function renderKatas(){
-  const due = kataDue();
-  const drafts = state.katas.filter(isDraft);
-  const rest = state.katas.filter(k=>!isDraft(k) && !due.some(x=>x.k.id===k.id));
+function renderRecall(){
+  const deck = trackKatas('recall');
+  const due = kataDue('recall');
+  const drafts = deck.filter(isDraft);
+  const rest = deck.filter(k=>!isDraft(k) && !due.some(x=>x.k.id===k.id));
   let html='';
-  if(kataAdding || kataEditing) html += kataFormHTML();
-  else {
-    const dsaSeeded = DSA_SET.every(([n])=>state.katas.some(k=>k.dsa===n));
-    html += `<div style="margin-bottom:16px; display:flex; gap:8px; flex-wrap:wrap"><button class="primary" data-knew>+ New kata</button>${dsaSeeded?'':`<button class="iconbtn" data-kseed title="23 data-structure implementations, scheduled here, executed in ~/dev/kata-typescript">+ kata-machine DSA set</button>`}</div>`;
-  }
+  const editingHere = kataEditing && !isDrill(kataById(kataEditing));
+  if(kataAdding || editingHere) html += kataFormHTML('recall');
+  else html += `<div style="margin-bottom:16px"><button class="primary" data-knew>+ New recall</button></div>`;
 
   if(drafts.length){
     html += `<h2>Captured — need answers <span class="badge">${drafts.length}</span></h2>
-    <p class="sub">Caught mid-problem. Write the answer and they join the rotation.</p>`;
+    <p class="sub">Caught mid-problem. Write the answer and it joins Recall.</p>`;
     html += drafts.map(k=>kataCard(k, kstate(k))).join('');
   }
-  html += `<h2>Due now <span class="badge">${due.length}</span></h2>`;
+  html += `<h2>Due + fresh <span class="badge">${due.length}</span></h2>`;
   html += due.length ? `<p class="sub">Mixed across languages on purpose — switching languages is the discrimination the work actually demands.</p>`+due.map(x=>kataCard(x.k,x.s)).join('')
-    : `<div class="empty">Nothing due. ${state.katas.length?'':'Add a kata, or capture one from a problem you’re logging.'}</div>`;
+    : `<div class="empty">${deck.length?'Nothing due.':'Recall starts empty. Capture one small thing from a problem log, or add a five-second prompt here.'}</div>`;
+  if(rest.length){
+    html += `<h2>Scheduled <span class="badge">${rest.length}</span></h2>`;
+    html += rest.map(k=>kataCard(k, kstate(k))).join('');
+  }
+  return html;
+}
+
+function renderDrills(){
+  const deck = trackKatas('drills');
+  const due = kataDue('drills');
+  const rest = deck.filter(k=>!due.some(x=>x.k.id===k.id));
+  const editingHere = kataEditing && isDrill(kataById(kataEditing));
+  let html = editingHere ? kataFormHTML('drills') : '';
+  if(!editingHere){
+    const dsaSeeded = DSA_SET.every(([n])=>deck.some(k=>k.dsa===n));
+    if(!dsaSeeded) html += `<div style="margin-bottom:16px"><button class="primary" data-kseed title="23 implementation forms, scheduled here and executed in ~/dev/kata-typescript">+ Seed 23 kata-machine forms</button></div>`;
+  }
+  html += `<h2>Due + fresh <span class="badge">${due.length}</span></h2>`;
+  html += due.length
+    ? `<p class="sub">One implementation form at a time. Grade the hesitation, not the minutes.</p>`+due.map(x=>kataCard(x.k,x.s)).join('')
+    : `<div class="empty">${deck.length?'Nothing due.':'No katas yet. Seed the 23 kata-machine forms to start this track.'}</div>`;
   if(rest.length){
     html += `<h2>Scheduled <span class="badge">${rest.length}</span></h2>`;
     html += rest.map(k=>kataCard(k, kstate(k))).join('');
@@ -1219,13 +1253,14 @@ function renderToday(){
   let html = '';
 
   // Deliberately not gated by the problem backlog: when 10 reviews feel like too much,
-  // 90 seconds of katas is still showing up, and the streak stays honest.
-  const kdue = kataDue();
+  // 90 seconds of atomic recall is still showing up, and the streak stays honest.
+  // Katas are 10-minute forms now; their own tab owns that heavier queue.
+  const kdue = kataDue('recall');
   if(kdue.length){
     html += `<h2>Warm-up <span class="badge">${kdue.length}</span></h2>
     <p class="sub">Small stuff, 10 seconds each. Type it from scratch — recognising the answer isn't the same as producing it.</p>`;
     html += kdue.slice(0,5).map(x=>kataCard(x.k,x.s)).join('');
-    if(kdue.length>5) html += `<div class="sub" style="margin:6px 0 0">+${kdue.length-5} more in the Katas tab</div>`;
+    if(kdue.length>5) html += `<div class="sub" style="margin:6px 0 0">+${kdue.length-5} more in Recall</div>`;
   }
 
   if(leeches.length){
@@ -1334,6 +1369,8 @@ function renderStats(){
   const due = allDue().length;
   const leeches = leechList().length;
   const skipped = pool.filter(p=>isDismissed(p.id)).length;
+  const recall = trackKatas('recall');
+  const drills = trackKatas('drills');
   const mins = state.log.filter(a=>a.m).map(a=>a.m).sort((a,b)=>a-b);
   const med = mins.length? mins[Math.floor(mins.length/2)] : 0;
   const coldRate = (()=>{ const recent=state.log.slice(-20); if(!recent.length)return 0; return Math.round(100*recent.filter(a=>a.r==='cold').length/recent.length); })();
@@ -1346,8 +1383,9 @@ function renderStats(){
     <div class="tile"><div class="tv">${coldRate}<small>%</small></div><div class="tl">solved cold, last 20</div></div>
     <div class="tile"><div class="tv">${leeches}</div><div class="tl">leeches (2 of last 3 needed help)</div></div>
     <div class="tile"><div class="tv">${skipped}</div><div class="tl">skipped</div></div>
-    <div class="tile"><div class="tv">${state.katas.filter(k=>!isDraft(k)).length}</div><div class="tl">katas in rotation</div></div>
-    <div class="tile"><div class="tv">${state.katas.filter(isDraft).length}</div><div class="tl">captured, need answers</div></div>
+    <div class="tile"><div class="tv">${recall.filter(k=>!isDraft(k)).length}</div><div class="tl">Recall cards in rotation</div></div>
+    <div class="tile"><div class="tv">${recall.filter(isDraft).length}</div><div class="tl">Recall captures, need answers</div></div>
+    <div class="tile"><div class="tv">${drills.length}</div><div class="tl">Katas in rotation</div></div>
   </div>`;
 
   html += `<h2>Progress across lists</h2><div class="tier-progress">`;
@@ -1426,15 +1464,24 @@ function renderAbout(){
   <p><strong>4. Repeated failures become leeches.</strong> Anki tags a card a leech when it keeps lapsing, and the fix is never "try harder" — it's to change how the thing is encoded. Here, 2 non-cold results in your last 3 attempts pulls a problem out of the normal queue and asks you to re-derive the insight in a sentence before you touch the keyboard. Two clean solves clears it.</p>
   <h3>Transfer tests</h3>
   <p>Once you've solved a problem cold twice, re-solving it mostly measures whether you remember <em>that problem</em>. So the card offers you an unseen sibling from the same pattern instead. Solving that cold is strictly stronger evidence than another rep on the one you've memorised, so it advances both cards' schedules. This is the closest thing the app has to a real interview: same pattern, no warning, blank editor.</p>
-  <h3>Katas — the second deck</h3>
-  <p>A NeetCode problem is a 30-minute problem-solving episode. "Counter map over a <code>string[]</code>" is an atomic fact you either produce in five seconds or you don't. Same spacing science, different parameters: katas start at a 2-day interval and stretch to a year, where problems floor at 7 days and cap at 120.</p>
-  <p><strong>You type the answer, you don't flip a card.</strong> Overt retrieval — actually producing the answer — beats covert retrieval, where you think "yeah, I know this" and flip. That gap is exactly the failure mode of AI-assisted fluency: reading a solution feels like knowing it. For JavaScript, TypeScript and SQL the app runs your code, so a kata can carry an assertion and correctness stops being self-reported. TypeScript katas are typechecked against a real standard library, not just stripped and run.</p>
-  <p><strong>Capture beats curation.</strong> The kata deck starts empty and fills from friction: every problem log form has one field for whatever you had to look up. It saves as a card that needs an answer, and stays out of the review queue until you write one. One field in the moment, authoring later.</p>
-  <p><strong>Repo drills bridge to kata-typescript.</strong> The workflow is inspired by
-    <a href="https://github.com/ThePrimeagen/kata-machine" target="_blank" rel="noopener">ThePrimeagen's kata-machine</a>:
-    implementation drills are scheduled here but executed in your own repo with a real editor and test runner. No kata-machine code or tests are bundled in this app.
-    Rather than regenerating every drill daily as massed practice, this deck only re-issues the ones that are actually decaying. <code>npm run due</code> in the repo reads your sync key and scaffolds exactly what's due.</p>
-  <p><strong>A kata leech means a broken card, not a weak memory.</strong> When a problem leeches, the pattern hasn't encoded. When a kata leeches it's nearly always asking two things at once — SuperMemo's minimum information principle, Rule 4. So the prompt is to split the card, not to drill it.</p>
+  <h3>Three learning objects, three tempos</h3>
+  <p>A problem is a 30-minute problem-solving episode. A recall fact — “counter map over a <code>string[]</code>” — is a five-second production. A kata is a 10-minute implementation form. Treating those as one queue made the schedule lie about the cost of a rep, so each now has its own track and spacing.</p>
+  <h3>Recall — an Anki deck for code</h3>
+  <p><strong>Five-second facts get the long memory curve.</strong> Recall starts at a 2-day interval and can stretch to a full year. JavaScript, TypeScript and SQL cards can run in the browser; assertions make correctness objective, while concept cards still demand that you say the answer before revealing it.</p>
+  <p><strong>You type the answer, you don't flip a card.</strong>
+    <a href="https://doi.org/10.3758/s13421-012-0245-x" target="_blank" rel="noopener">Putnam &amp; Roediger's work on overt retrieval</a>
+    is the reason: actually producing an answer beats thinking “yeah, I know this.” That gap is exactly the failure mode of AI-assisted fluency — reading a solution feels like knowing it.</p>
+  <p><strong>Capture beats curation.</strong> Recall starts empty and fills from friction. Every problem log has one field for whatever you had to look up; the capture waits outside the queue until you write its answer. One field in the moment, authoring later.</p>
+  <p><strong>A Recall leech is usually a malformed card.</strong>
+    <a href="https://super-memory.com/articles/20rules.htm" target="_blank" rel="noopener">Wozniak's minimum information principle</a>
+    says the fix is to split a prompt that asks two things at once, not to grind the same overloaded card harder.</p>
+  <h3>Katas — implementation forms</h3>
+  <p><strong>Kata 型</strong> means a martial-arts form repeated until the movements stop being decisions; Dave Thomas borrowed the idea into programming with code katas in 2003. Here, each kata is a 10–20 minute data-structure implementation performed from memory.</p>
+  <p><strong>The lineage runs through kata-machine.</strong> The 23 forms are inspired by
+    <a href="https://github.com/ThePrimeagen/kata-machine" target="_blank" rel="noopener">ThePrimeagen's kata-machine</a>
+    and scheduled here, but executed in your own repo with a real editor and test runner. No kata-machine code or tests are bundled in this app. Rather than regenerating all 23 daily as massed practice, <code>npm run due</code> reads your sync key and scaffolds exactly what's decaying.</p>
+  <p><strong>Weekly until boring, then monthly.</strong> A successful interval has a 7-day floor and a 180-day cap; “Had to think” returns in at least 3 days and a blank in 2. Grade hesitation, not wall-clock time: “Instant” means you typed the form without stopping to decide what comes next.</p>
+  <p><strong>A kata leech means the form hasn't encoded.</strong> Splitting does not apply to a form. Re-derive the algorithm on paper or reread the reference implementation, then come back for another full implementation instead of burning another doomed rep.</p>
   <h3>A sane daily loop</h3>
   <p>Leeches first (they're cheap — you're recalling an idea, not grinding code), then the review queue, then whatever new problems the gate lets through. Cap sessions at ~1 hour. Give a new problem 30–45 minutes before escalating, and escalate through hints rather than jumping to the solution — then re-solve it the next day, which is what turns recognising a solution into being able to generate one.</p>
   <div class="refs">
@@ -1464,11 +1511,13 @@ function render(){
   document.getElementById('dueCnt').textContent = backlog;
   document.getElementById('dueCnt').className = 'cnt' + (backlog? ' hot':'');
   document.getElementById('streakVal').textContent = streak();
-  const kd = kataDue().length, kdr = state.katas.filter(isDraft).length;
-  document.getElementById('kataCnt').textContent = kd + kdr;
-  document.getElementById('kataCnt').className = 'cnt' + (kd? ' hot':'');
+  const recallDue = kataDue('recall').length, drillDue = kataDue('drills').length;
+  document.getElementById('recallCnt').textContent = recallDue;
+  document.getElementById('recallCnt').className = 'cnt' + (recallDue? ' hot':'');
+  document.getElementById('drillCnt').textContent = drillDue;
+  document.getElementById('drillCnt').className = 'cnt' + (drillDue? ' hot':'');
   disposeKataEditors();
-  view.innerHTML = activeTab==='today'?renderToday(): activeTab==='katas'?renderKatas():
+  view.innerHTML = activeTab==='today'?renderToday(): activeTab==='recall'?renderRecall(): activeTab==='drills'?renderDrills():
     activeTab==='all'?renderAll(): activeTab==='stats'?renderStats(): renderAbout();
   enhanceKataEditors();
   if(activeTab==='all'){
@@ -1492,7 +1541,7 @@ view.addEventListener('click', e=>{
     if(i>=0){ state.log.splice(i,1); state.deletedLog.push(`${pid}|${d}|${r}`); save(); toast('Attempt deleted'); render(); }
     return;
   }
-  /* ---- katas ---- */
+  /* ---- recall + katas ---- */
   if(e.target.closest('[data-knew]')){ kataAdding=true; kataEditing=null; render(); return; }
   if(e.target.closest('[data-kseed]')){
     const n = seedDSA();
@@ -1501,8 +1550,9 @@ view.addEventListener('click', e=>{
   }
   if(e.target.closest('[data-kcancel]')){ kataAdding=false; kataEditing=null; render(); return; }
   const kedit = e.target.closest('[data-kedit]');
-  if(kedit){ kataEditing=Number(kedit.dataset.kedit); kataAdding=false; activeTab='katas';
-    document.querySelectorAll('#tabs button').forEach(x=>x.classList.toggle('active', x.dataset.tab==='katas'));
+  if(kedit){ kataEditing=Number(kedit.dataset.kedit); kataAdding=false;
+    activeTab=isDrill(kataById(kataEditing))?'drills':'recall';
+    document.querySelectorAll('#tabs button').forEach(x=>x.classList.toggle('active', x.dataset.tab===activeTab));
     render(); return; }
   if(e.target.closest('[data-ksubmit]')){
     const f = e.target.closest('[data-kform]');
@@ -1511,17 +1561,18 @@ view.addEventListener('click', e=>{
     const fields = {q, a:f.querySelector('[data-ka]').value, lang:f.querySelector('[data-klang]').value,
       kind:f.querySelector('[data-kkind]').value, starter:f.querySelector('[data-kstarter]').value,
       test:f.querySelector('[data-ktest]').value, setup:f.querySelector('[data-ksetup]').value};
-    if(kataEditing){ Object.assign(kataById(kataEditing), fields, {u: Date.now()}); toast('Kata updated'); }
-    else { state.katas.push({id: genId(), ...fields, u: Date.now(), src:null, created: todayStr()}); toast('Kata added'); }
+    if(kataEditing){ Object.assign(kataById(kataEditing), fields, {u: Date.now()}); toast(fields.kind==='repo'?'Kata updated':'Recall updated'); }
+    else { state.katas.push({id: genId(), ...fields, u: Date.now(), src:null, created: todayStr()}); toast('Recall added'); }
     kataAdding=false; kataEditing=null; save(); render(); return;
   }
   const kdel = e.target.closest('[data-kdel]');
   if(kdel){
     const kid=Number(kdel.dataset.kdel);
+    const deleted = kataById(kid);
     state.katas = state.katas.filter(k=>k.id!==kid);
     state.klog = state.klog.filter(a=>a.kid!==kid);
     state.kataTombs.push(kid);
-    save(); toast('Kata deleted'); render(); return;
+    save(); toast(isDrill(deleted)?'Kata deleted':'Recall deleted'); render(); return;
   }
   const kres = e.target.closest('[data-kres]');
   if(kres){
@@ -1634,11 +1685,11 @@ view.addEventListener('click', e=>{
     save();
     openForms.delete(pid);
     const s = pstate(PROBLEMS.find(p=>p.id===pid));
-    toast(`Logged ${RLABEL[r].toLowerCase()} — back ${s.interval===1?'tomorrow':'in '+s.interval+' days'} (${nice(s.due)})${xferName?` · credited ${xferName}`:''}${capName?` · captured “${capName}”`:''}`);
+    toast(`Logged ${RLABEL[r].toLowerCase()} — back ${s.interval===1?'tomorrow':'in '+s.interval+' days'} (${nice(s.due)})${xferName?` · credited ${xferName}`:''}${capName?` · added “${capName}” to Recall`:''}`);
     render(); return;
   }
 });
-/* ---- kata editor: keep drafts across re-renders, run without losing focus ---- */
+/* ---- recall editor: keep drafts across re-renders, run without losing focus ---- */
 view.addEventListener('input', e=>{
   const ed = e.target.closest('[data-keditor]');
   if(ed) kataDraft.set(Number(ed.dataset.keditor), ed.value);
@@ -1690,7 +1741,7 @@ function paintSyncbar(){
       <div class="srow"><button class="primary" data-syncon>Turn on sync</button></div>`;
   } else {
     const link = location.origin.startsWith('http') ? `${location.origin}${location.pathname}#k=${key}` : `https://neetcode-spaced-reps.vercel.app/#k=${key}`;
-    syncbar.innerHTML = `<strong>Sync is on.</strong> Open this link once on another device and the two logs merge — attempts union, deletions stick, newest kata edit wins.
+    syncbar.innerHTML = `<strong>Sync is on.</strong> Open this link once on another device and the two logs merge — attempts union, deletions stick, newest deck edit wins.
       <div class="srow"><input type="text" readonly value="${esc(link)}" id="pairLink"><button class="iconbtn" data-synccopy>Copy</button></div>
       <div class="srow"><button class="iconbtn" data-syncnow>Sync now</button><button class="ghost" data-syncoff>Turn off on this device (keeps local data)</button></div>`;
   }

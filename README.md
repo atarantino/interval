@@ -1,11 +1,12 @@
-# NeetCode Lists · Spaced Reps
+# Interval
 
-A spaced-repetition trainer for the [Blind 75](https://neetcode.io/practice/practice/blind75),
+Spaced reps for coding interviews — a spaced-repetition trainer for the
+[Blind 75](https://neetcode.io/practice/practice/blind75),
 [NeetCode 150](https://neetcode.io/practice/practice/neetcode150), and
 [NeetCode 250](https://neetcode.io/practice/practice/neetcode250), built on spacing-effect
 and retrieval-practice research.
 
-**Use it here → [neetcode-spaced-reps.vercel.app](https://neetcode-spaced-reps.vercel.app)**
+**Use it here → [intervalreps.vercel.app](https://intervalreps.vercel.app)**
 
 No account, no install. Your log lives in your browser.
 

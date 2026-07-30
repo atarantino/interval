@@ -684,35 +684,43 @@ const trackKatas = track => state.katas.filter(k=>track==='drills' ? isDrill(k) 
    implementation in an external repo, so they're never drafts. */
 function isDraft(k){ return !isDrill(k) && (!k.a || !k.a.trim()); }
 
-/* The kata-machine DSA set (mirrors ligma.config.ts in ~/dev/kata-typescript).
+/* The kata-machine DSA set (mirrors ligma.config.ts in ~/dev/kata-typescript),
+   in the order the forms are built in ThePrimeagen's "The Last Algorithms Course
+   You'll Need" (master.dev/courses/algorithms). Each entry: [name, description,
+   course chapter, lesson slug] — the slug links to the lesson that builds the form.
    These are repo drills: the app schedules them, the repo executes them — kata-machine's
    default of regenerating all 23 every day is massed practice, and the whole point of
    this deck is to only re-implement what's actually decaying. */
+const COURSE_URL = 'https://master.dev/courses/algorithms/';
 const DSA_SET = [
-  ['LinearSearchList','linear search over an array'],
-  ['BinarySearchList','binary search over a sorted array'],
-  ['TwoCrystalBalls','two crystal balls — O(√n) drop search'],
-  ['BubbleSort','bubble sort in place'],
-  ['QuickSort','quicksort with in-place partition'],
-  ['SinglyLinkedList','singly linked list — full class'],
-  ['DoublyLinkedList','doubly linked list — full class'],
-  ['Queue','queue via linked nodes'],
-  ['Stack','stack via linked nodes'],
-  ['ArrayList','array-backed list with growth'],
-  ['MazeSolver','recursive maze path solver'],
-  ['BTPreOrder','binary tree pre-order traversal'],
-  ['BTInOrder','binary tree in-order traversal'],
-  ['BTPostOrder','binary tree post-order traversal'],
-  ['BTBFS','binary tree breadth-first search'],
-  ['CompareBinaryTrees','structural binary tree comparison'],
-  ['DFSOnBST','depth-first search on a BST'],
-  ['DFSGraphList','DFS on adjacency-list graph'],
-  ['BFSGraphMatrix','BFS on adjacency-matrix graph'],
-  ['Trie','trie with insert/delete/autocomplete'],
-  ['Map','hash map from scratch'],
-  ['MinHeap','min-heap with heapify up/down'],
-  ['LRU','LRU cache — map + doubly linked list'],
+  ['LinearSearchList','linear search over an array','Search','linear-search-kata-setup'],
+  ['BinarySearchList','binary search over a sorted array','Search','implementing-binary-search'],
+  ['TwoCrystalBalls','two crystal balls — O(√n) drop search','Search','implementing-two-crystal-balls'],
+  ['BubbleSort','bubble sort in place','Sort','implementing-bubble-sort'],
+  ['SinglyLinkedList','singly linked list — full class','Sort','linked-list-data-structures'],
+  ['Queue','queue via linked nodes','Sort','implementing-a-queue'],
+  ['Stack','stack via linked nodes','Sort','implementing-a-stack'],
+  ['ArrayList','array-backed list with growth','Arrays','arraylist'],
+  ['MazeSolver','recursive maze path solver','Recursion','path-finding-base-case'],
+  ['QuickSort','quicksort with in-place partition','Quick Sort','implementing-quicksort'],
+  ['DoublyLinkedList','doubly linked list — full class','Doubly Linked List','linked-list-prepend-insertat-append'],
+  ['BTPreOrder','binary tree pre-order traversal','Trees','implement-tree-traversal'],
+  ['BTInOrder','binary tree in-order traversal','Trees','implement-tree-traversal'],
+  ['BTPostOrder','binary tree post-order traversal','Trees','implement-tree-traversal'],
+  ['BTBFS','binary tree breadth-first search','Tree Search','implement-breadth-first-search'],
+  ['CompareBinaryTrees','structural binary tree comparison','Tree Search','implement-binary-tree-comparison'],
+  ['DFSOnBST','depth-first search on a BST','Tree Search','implement-depth-first-search'],
+  ['MinHeap','min-heap with heapify up/down','Heap','implementing-heap'],
+  ['Trie','trie with insert/delete/autocomplete','Heap','tries'],
+  ['BFSGraphMatrix','BFS on adjacency-matrix graph','Graphs','implementing-bfs-on-adjacency-matrix'],
+  ['DFSGraphList','DFS on adjacency-list graph','Graphs','implement-dfs-on-adjacency-list'],
+  ['Map','hash map from scratch','Maps & LRU','maps'],
+  ['LRU','LRU cache — map + doubly linked list','Maps & LRU','implementing-an-lru-cache'],
 ];
+/* Course order and chapter live here, keyed by dsa name, so already-seeded decks
+   (synced state predates this metadata) pick it up without a migration. */
+const DSA_META = Object.fromEntries(DSA_SET.map(([name,,chapter,slug],i)=>[name,{ord:i,chapter,slug}]));
+const dsaOrd = k => (k.dsa && DSA_META[k.dsa]) ? DSA_META[k.dsa].ord : Infinity;
 function seedDSA(){
   const have = new Set(state.katas.map(k=>k.dsa).filter(Boolean));
   let added=0;
@@ -776,6 +784,7 @@ function kataDue(track){
     .filter(x=>x.s.n>0 && x.s.due<=t)
     .sort((a,b)=> a.s.due<b.s.due?-1 : a.s.due>b.s.due?1 : 0);
   const fresh = deck.filter(k=>!isDraft(k) && kAttempts(k.id).length===0).map(k=>({k, s:kstate(k)}));
+  if(track==='drills') fresh.sort((a,b)=>dsaOrd(a.k)-dsaOrd(b.k));
   const queue = [...due, ...fresh];
   return track==='recall' ? interleaveLang(queue) : queue;
 }
@@ -1104,6 +1113,7 @@ function kataCard(k, s){
   const open = kataOpen.has(k.id);
   const draft = isDraft(k);
   const leech = kLeech(k.id);
+  const meta = k.dsa ? DSA_META[k.dsa] : null;
   let dueBit='';
   if(s.n>0){
     const over = diffDays(s.due, todayStr());
@@ -1134,7 +1144,8 @@ function kataCard(k, s){
         body += `<div class="leech-box">Do this one in <strong>kata-typescript</strong>, not here — real editor, real test runner:
           ${k.dsa?`<pre style="margin:8px 0 0; font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-size:12.5px; background:var(--page); border-radius:8px; padding:8px 10px; overflow-x:auto">npm run generate -- ${esc(k.dsa)}</pre>
           <div style="margin-top:6px; font-size:12px; color:var(--ink-muted)">or <code>npm run due -- --generate</code> to scaffold everything due at once</div>`:''}
-          <div style="margin-top:6px">Implement until vitest passes, then grade the hesitation: <strong>Instant</strong> means you typed it without stopping, not merely that the wall-clock time looked good.</div></div>`;
+          <div style="margin-top:6px">Implement until vitest passes, then grade the hesitation: <strong>Instant</strong> means you typed it without stopping, not merely that the wall-clock time looked good.</div>
+          ${meta?`<div style="margin-top:6px">Blanked on the idea? <a href="${COURSE_URL+meta.slug}/" target="_blank" rel="noopener">Rewatch the lesson — ${esc(meta.chapter)} ↗</a></div>`:''}</div>`;
       } else if(k.kind==='code'){
         const val = kataDraft.has(k.id) ? kataDraft.get(k.id) : (k.starter||'');
         body += `<textarea class="editor" data-keditor="${k.id}" spellcheck="false" placeholder="Write it from scratch…">${esc(val)}</textarea>
@@ -1165,6 +1176,7 @@ function kataCard(k, s){
       ${draft?`<span class="kdraft">needs answer</span>`:''}
       ${leech?`<span class="leech-tag">leech</span>`:''}
       ${k.src?`<span class="prob-meta">from ${esc((PROBLEMS.find(p=>p.id===k.src)||{}).name||'')}</span>`:''}
+      ${meta?`<a class="prob-meta" href="${COURSE_URL+meta.slug}/" target="_blank" rel="noopener" title="Open the lesson that builds this form on master.dev">${esc(meta.chapter)} ↗</a>`:''}
       ${s.last?`<span class="result-icon">${KRICON[s.last.r]} ${KRLABEL[s.last.r]} · ${nice(s.last.d)}</span>`:''}
       <span class="spacer"></span>
       ${dueBit}
@@ -1229,7 +1241,7 @@ function renderRecall(){
 function renderDrills(){
   const deck = trackKatas('drills');
   const due = kataDue('drills');
-  const rest = deck.filter(k=>!due.some(x=>x.k.id===k.id));
+  const rest = deck.filter(k=>!due.some(x=>x.k.id===k.id)).sort((a,b)=>dsaOrd(a)-dsaOrd(b));
   const editingHere = kataEditing && isDrill(kataById(kataEditing));
   let html = editingHere ? kataFormHTML('drills') : '';
   if(!editingHere){
@@ -1716,6 +1728,7 @@ view.addEventListener('click', e=>{
   if(krun){ runKataFromUI(Number(krun.dataset.krun)); return; }
   const ktog = e.target.closest('[data-ktoggle]');
   if(ktog){
+    if(e.target.closest('a')) return;
     const id=Number(ktog.dataset.ktoggle);
     kataOpen.has(id)?kataOpen.delete(id):kataOpen.add(id);
     render(); return;

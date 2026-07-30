@@ -207,6 +207,7 @@ input[type=search]{flex:1; min-width:200px}
 .hcell{width:14px; height:14px; border-radius:3px; background:var(--chip-bg)}
 .heat-legend{display:flex; align-items:center; gap:4px; font-size:11.5px; color:var(--ink-muted); margin-bottom:8px}
 .heat-legend .hcell{width:11px;height:11px}
+.sharebar{display:flex; justify-content:flex-end; gap:8px; margin:0 0 10px}
 /* About */
 .prose{max-width:660px; font-size:14.5px; color:var(--ink-2)}
 .prose h3{color:var(--ink-1); font-size:14.5px; margin:22px 0 6px}
@@ -1359,6 +1360,124 @@ function renderAll(){
   return html;
 }
 
+/* ---------- share recap card ----------
+   One-tap PNG of your recap: a terminal-receipt frame around the same
+   16-week heatmap the Stats tab shows. The card is built as an SVG string
+   and rasterized on a canvas, so the export needs no libraries and no
+   network — system fonts only. Shares via the Web Share API where file
+   sharing exists (iOS/Android), otherwise downloads the PNG. */
+const SHARE_URL = 'neetcode-spaced-reps.vercel.app';
+const CARD_MONO = `ui-monospace,Menlo,Consolas,monospace`;
+/* fixed palette (dark ramp) — the export ignores the viewer's theme */
+const CARD_P = {page:'#0d0d0d', win:'#1a1a19', ink:'#ffffff', muted:'#898781',
+  grid:'#2c2c2a', good:'#0ca30c', warn:'#fab219', crit:'#d03b3b',
+  ramp:['#262624','#0d366b','#104281','#1c5cab','#3987e5']};
+
+function recapData(){
+  const t = todayStr();
+  const info = TIER_INFO[state.tier];
+  const pool = activePool();
+  const seen = pool.filter(p=>pstate(p).n>0).length;
+  const EMO = {cold:'⚡', hints:'🟨', video:'🟥'};
+  const today = state.log.filter(a=>a.d===t && EMO[a.r]);
+  const recent = state.log.slice(-20);
+  const counts = {}; state.log.forEach(a=>counts[a.d]=(counts[a.d]||0)+1);
+  return {
+    streak: streak(),
+    todayEmo: today.map(a=>EMO[a.r]).join(''),
+    todayN: today.length,
+    todayCold: today.filter(a=>a.r==='cold').length,
+    coldRate: recent.length? Math.round(100*recent.filter(a=>a.r==='cold').length/recent.length) : 0,
+    seen, listN: info.n, listLabel: info.label,
+    total: state.log.length, counts,
+  };
+}
+
+function recapCardSVG(d, w, h){
+  const P=CARD_P, port=h>w;
+  const m=w*0.06, px=w*0.05, tx=m+px;
+  const fs=port? w*0.034 : w*0.024, lh=fs*1.9;
+  const gap=Math.max(4, Math.round(w*0.006));
+  const innerW=(w-2*m)-2*px;
+  const cell=Math.floor(((port? innerW : innerW*0.46)-15*gap)/16);
+  const gridW=16*cell+15*gap, gridH=7*cell+6*gap;
+  const bar=fs*2.6;
+  const contentH = port
+    ? lh*1.2 + 4*lh + fs*0.4 + gridH + lh*1.2 + fs*0.6
+    : Math.max(lh*1.2 + 5*lh, fs*0.8 + gridH) + fs*0.4;
+  const winW=w-2*m, winH=bar+fs*1.4+contentH+fs*1.2, winY=(h-winH)/2 - h*0.02;
+  let y=winY+bar+fs*1.4, out='';
+  const vx=tx+w*(port?0.30:0.14);
+  const line=(label,val)=>{ out+=`<text x="${tx}" y="${y}" font-family="${CARD_MONO}" font-size="${fs}" fill="${P.muted}">${label}</text><text x="${vx}" y="${y}" font-family="${CARD_MONO}" font-size="${fs}" fill="${P.ink}">${val}</text>`; y+=lh; };
+  out+=`<text x="${tx}" y="${y}" font-family="${CARD_MONO}" font-size="${fs}" fill="${P.good}">$ ncsr --recap</text>`; y+=lh*1.2;
+  const fb=Math.round(10*d.seen/d.listN);
+  line('streak', `${d.streak} day${d.streak===1?'':'s'} 🔥`);
+  line('today', d.todayN? `${d.todayEmo}  ${d.todayCold}/${d.todayN} cold` : '—');
+  line('last 20', `${d.coldRate}% cold`);
+  line(esc(d.listLabel.toLowerCase()), `${'▓'.repeat(fb)}${'░'.repeat(10-fb)}  ${d.seen}/${d.listN}`);
+  if(!port) line('attempts', `${d.total} total`);
+  let hx, hy;
+  if(port){ y+=fs*0.4; hx=tx; hy=y; y+=gridH+lh*1.2; }
+  else { hx=m+winW-px-gridW; hy=winY+bar+fs*0.8; }
+  const end=parse(todayStr()), dow=end.getDay();
+  const start=new Date(end); start.setDate(start.getDate()-(15*7+dow));
+  let i=0;
+  for(let dd=new Date(start); dd<=end; dd.setDate(dd.getDate()+1), i++){
+    const c=d.counts[fmt(dd)]||0, lv=c===0?0 : c===1?1 : c===2?2 : c<=4?3 : 4;
+    out+=`<rect x="${hx+Math.floor(i/7)*(cell+gap)}" y="${hy+(i%7)*(cell+gap)}" width="${cell}" height="${cell}" rx="${Math.max(2,cell*0.18)}" fill="${P.ramp[lv]}"/>`;
+  }
+  if(port){ out+=`<text x="${tx}" y="${y}" font-family="${CARD_MONO}" font-size="${fs}" fill="${P.muted}">attempts</text><text x="${vx}" y="${y}" font-family="${CARD_MONO}" font-size="${fs}" fill="${P.ink}">${d.total} total</text>`; }
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">
+  <rect width="${w}" height="${h}" fill="${P.page}"/>
+  <rect x="${m}" y="${winY}" width="${winW}" height="${winH}" rx="${w*0.02}" fill="${P.win}" stroke="${P.grid}"/>
+  <circle cx="${m+w*0.035}" cy="${winY+fs*1.3}" r="${w*0.009}" fill="${P.crit}"/>
+  <circle cx="${m+w*0.062}" cy="${winY+fs*1.3}" r="${w*0.009}" fill="${P.warn}"/>
+  <circle cx="${m+w*0.089}" cy="${winY+fs*1.3}" r="${w*0.009}" fill="${P.good}"/>
+  <text x="${w/2}" y="${winY+fs*1.55}" text-anchor="middle" font-family="${CARD_MONO}" font-size="${fs*0.8}" fill="${P.muted}">spaced-reps — recap</text>
+  ${out}
+  <text x="${w/2}" y="${h-h*0.05}" text-anchor="middle" font-family="${CARD_MONO}" font-size="${fs*0.9}" fill="${P.muted}">— ${SHARE_URL} —</text>
+</svg>`;
+}
+
+/* Wordle-style text recap — pastes cleanly anywhere an image can't go */
+function recapText(){
+  const d = recapData();
+  const fb = Math.round(10*d.seen/d.listN);
+  return `NeetCode Spaced Reps — day ${d.streak} 🔥
+${d.todayN? `${d.todayEmo} ${d.todayCold}/${d.todayN} cold` : '— no reps yet today'}
+${d.listLabel} ${'▓'.repeat(fb)}${'░'.repeat(10-fb)} ${d.seen}/${d.listN}`;
+}
+
+async function copyRecapText(){
+  try{ await navigator.clipboard.writeText(recapText()); toast('Recap copied'); }
+  catch(err){ toast('Could not copy — clipboard unavailable'); }
+}
+
+async function shareRecapCard(){
+  const portrait = matchMedia('(pointer:coarse)').matches || innerWidth<700;
+  const [w,h] = portrait? [1080,1350] : [1200,675];
+  const svg = recapCardSVG(recapData(), w, h);
+  const svgUrl = URL.createObjectURL(new Blob([svg],{type:'image/svg+xml'}));
+  try{
+    const img = new Image();
+    await new Promise((res,rej)=>{ img.onload=res; img.onerror=()=>rej(new Error('svg render')); img.src=svgUrl; });
+    const cv = document.createElement('canvas'); cv.width=w; cv.height=h;
+    cv.getContext('2d').drawImage(img,0,0,w,h);
+    const blob = await new Promise(r=>cv.toBlob(r,'image/png'));
+    if(!blob) throw new Error('png encode');
+    const file = new File([blob], `ncsr-recap-${todayStr()}.png`, {type:'image/png'});
+    if(navigator.canShare && navigator.canShare({files:[file]})){
+      try{ await navigator.share({files:[file]}); return; }
+      catch(err){ if(err.name==='AbortError') return; /* else fall through to download */ }
+    }
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(blob); a.download=file.name; a.click();
+    setTimeout(()=>URL.revokeObjectURL(a.href), 5000);
+    toast('Recap image downloaded');
+  }catch(err){ toast('Could not create the recap image'); }
+  finally{ URL.revokeObjectURL(svgUrl); }
+}
+
 function renderStats(){
   const t = todayStr();
   const pool = activePool();
@@ -1374,7 +1493,8 @@ function renderStats(){
   const mins = state.log.filter(a=>a.m).map(a=>a.m).sort((a,b)=>a-b);
   const med = mins.length? mins[Math.floor(mins.length/2)] : 0;
   const coldRate = (()=>{ const recent=state.log.slice(-20); if(!recent.length)return 0; return Math.round(100*recent.filter(a=>a.r==='cold').length/recent.length); })();
-  let html = `<div class="tiles">
+  let html = `<div class="sharebar"><button data-copyrecap>Copy recap</button><button data-sharecard>Share recap ↗</button></div>
+  <div class="tiles">
     <div class="tile"><div class="tv">${seen}<small> /${info.n}</small></div><div class="tl">${esc(info.label)} attempted</div></div>
     <div class="tile"><div class="tv">${solid}</div><div class="tl">solid in ${esc(info.label)} (≥30d)</div></div>
     <div class="tile"><div class="tv">${due}</div><div class="tl">due today across started problems</div></div>
@@ -1541,6 +1661,8 @@ view.addEventListener('click', e=>{
     if(i>=0){ state.log.splice(i,1); state.deletedLog.push(`${pid}|${d}|${r}`); save(); toast('Attempt deleted'); render(); }
     return;
   }
+  if(e.target.closest('[data-sharecard]')){ shareRecapCard(); return; }
+  if(e.target.closest('[data-copyrecap]')){ copyRecapText(); return; }
   /* ---- recall + katas ---- */
   if(e.target.closest('[data-knew]')){ kataAdding=true; kataEditing=null; render(); return; }
   if(e.target.closest('[data-kseed]')){

@@ -350,7 +350,8 @@ input[type=search]{flex:1; min-width:200px}
       (<a href="https://neetcode.io/practice/practice/blind75" target="_blank" rel="noopener">Blind 75</a> ·
       <a href="https://neetcode.io/practice/practice/neetcode150" target="_blank" rel="noopener">150</a> ·
       <a href="https://neetcode.io/practice/practice/neetcode250" target="_blank" rel="noopener">250</a>) ·
-      repo drills inspired by <a href="https://github.com/ThePrimeagen/kata-machine" target="_blank" rel="noopener">ThePrimeagen's kata-machine</a> ·
+      repo drills inspired by <a href="https://github.com/ThePrimeagen/kata-machine" target="_blank" rel="noopener">ThePrimeagen's kata-machine</a>
+      (executed in <a href="https://github.com/atarantino/kata-typescript" target="_blank" rel="noopener">kata-typescript</a>) ·
       not affiliated with NeetCode or LeetCode</span>
   </footer>
 </div>
@@ -1141,7 +1142,7 @@ function kataCard(k, s){
             <div style="margin-top:8px"><button class="iconbtn" data-kedit="${k.id}">Edit / split</button></div></div>`;
       }
       if(isDrill(k)){
-        body += `<div class="leech-box">Do this one in <strong>kata-typescript</strong>, not here — real editor, real test runner:
+        body += `<div class="leech-box">Do this one in <a href="https://github.com/atarantino/kata-typescript" target="_blank" rel="noopener"><strong>kata-typescript</strong></a>, not here — real editor, real test runner:
           ${k.dsa?`<pre style="margin:8px 0 0; font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-size:12.5px; background:var(--page); border-radius:8px; padding:8px 10px; overflow-x:auto">npm run generate -- ${esc(k.dsa)}</pre>
           <div style="margin-top:6px; font-size:12px; color:var(--ink-muted)">or <code>npm run due -- --generate</code> to scaffold everything due at once</div>`:''}
           <div style="margin-top:6px">Implement until vitest passes, then grade the hesitation: <strong>Instant</strong> means you typed it without stopping, not merely that the wall-clock time looked good.</div>
@@ -1615,7 +1616,7 @@ function renderAbout(){
   <p><strong>Kata 型</strong> means a martial-arts form repeated until the movements stop being decisions; Dave Thomas borrowed the idea into programming with code katas in 2003. Here, each kata is a 10–20 minute data-structure implementation performed from memory.</p>
   <p><strong>The lineage runs through kata-machine.</strong> The 23 forms are inspired by
     <a href="https://github.com/ThePrimeagen/kata-machine" target="_blank" rel="noopener">ThePrimeagen's kata-machine</a>
-    and scheduled here, but executed in your own repo with a real editor and test runner. No kata-machine code or tests are bundled in this app. Rather than regenerating all 23 daily as massed practice, <code>npm run due</code> reads your sync key and scaffolds exactly what's decaying.</p>
+    and scheduled here, but executed in your own clone of <a href="https://github.com/atarantino/kata-typescript" target="_blank" rel="noopener">kata-typescript</a> with a real editor and test runner. No kata-machine code or tests are bundled in this app. Rather than regenerating all 23 daily as massed practice, <code>npm run due</code> reads your sync key and scaffolds exactly what's decaying.</p>
   <p><strong>Weekly until boring, then monthly.</strong> A successful interval has a 7-day floor and a 180-day cap; “Had to think” returns in at least 3 days and a blank in 2. Grade hesitation, not wall-clock time: “Instant” means you typed the form without stopping to decide what comes next.</p>
   <p><strong>A kata leech means the form hasn't encoded.</strong> Splitting does not apply to a form. Re-derive the algorithm on paper or reread the reference implementation, then come back for another full implementation instead of burning another doomed rep.</p>
   <h3>A sane daily loop</h3>

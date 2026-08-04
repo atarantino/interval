@@ -14,8 +14,8 @@ import { v } from "convex/values";
    The client also merges the response with any edits made while its request was in
    flight, so both copies must make the same deterministic choice on every tie. */
 
-const lkey = (a: any) => `${a.pid}|${a.d}|${a.r}`;
-const kkey = (a: any) => `${a.kid}|${a.d}|${a.r}`;
+const lkey = (a: any) => (typeof a.i === "string" && a.i) ? `i:${a.i}` : `${a.pid}|${a.d}|${a.r}`;
+const kkey = (a: any) => (typeof a.i === "string" && a.i) ? `i:${a.i}` : `${a.kid}|${a.d}|${a.r}`;
 const validTime = (n: any) => Number.isFinite(n) && n >= 0 ? n : 0;
 
 function normalizePrefTs(st: any) {
@@ -83,8 +83,12 @@ export function mergeStates(a: any, b: any) {
         out.set(key, entry);
       }
     }
-    return [...out.values()].sort((m, n) =>
-      m.d < n.d ? -1 : m.d > n.d ? 1 : keyFn(m).localeCompare(keyFn(n)));
+    return [...out.values()].sort((m, n) => {
+      const mid = m.pid ?? m.kid;
+      const nid = n.pid ?? n.kid;
+      return m.d < n.d ? -1 : m.d > n.d ? 1 :
+        mid < nid ? -1 : mid > nid ? 1 : keyFn(m).localeCompare(keyFn(n));
+    });
   };
 
   const katas = new Map<any, any>();

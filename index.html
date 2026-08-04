@@ -260,6 +260,11 @@ input[type=search]{flex:1; min-width:200px}
 .mtable .num{font-variant-numeric:tabular-nums; white-space:nowrap}
 .mnote{margin-top:12px; font-size:13px; color:var(--ink-muted)}
 .mnote strong{color:var(--ink-2)}
+/* Citations are secondary navigation, so they follow the footer's quiet-link
+   idiom rather than competing with the prose for attention. */
+.cited{color:var(--ink-muted)}
+.cited a{color:var(--ink-2); border-bottom:1px dotted var(--baseline); text-decoration:none}
+.cited a:hover{color:var(--blue); border-bottom-color:currentColor; text-decoration:none}
 /* The ladder a cold-solved problem actually walks, plotted on a real calendar so
    the expanding gap is visible rather than asserted. Values come from schedule(). */
 .ladder{margin-top:20px}
@@ -1898,10 +1903,14 @@ function renderAbout(){
   <section>
     <h2>The research, briefly</h2>
     <div class="method-defs split">
-      <div><h3>Spacing beats cramming</h3><p>Distributed practice reliably outperforms massed practice, and the useful gap grows with how long you want to hold on to something. A problem returns right around when you'd start to forget it.</p></div>
-      <div><h3>Retrieval is the workout</h3><p>Testing yourself retains far better than re-reading. You re-solve from a blank editor, and your old notes stay behind a click, so recalling the approach is the rep.</p></div>
-      <div><h3>Difficulty is desirable</h3><p>Practice that feels harder often sticks better. Struggling for twenty minutes before a problem cracks is the point, not a sign you're behind.</p></div>
-      <div><h3>Interleaving trains discrimination</h3><p>Mixing patterns removes the category hint and rehearses what an interview actually tests: spotting which strategy applies before anyone names it.</p></div>
+      <div><h3>Spacing beats cramming</h3><p>Across 254 comparisons, distributed practice reliably outperformed massed practice, and the useful gap grows with how long you want to hold on to something. A problem returns right around when you'd start to forget it.
+        <span class="cited">(<a href="https://doi.org/10.1037/0033-2909.132.3.354" target="_blank" rel="noopener">Cepeda et al., 2006</a>; <a href="https://doi.org/10.1111/j.1467-9280.2008.02209.x" target="_blank" rel="noopener">2008</a>)</span></p></div>
+      <div><h3>Retrieval is the workout</h3><p>Testing yourself retains far better than re-reading. You re-solve from a blank editor, and your old notes stay behind a click, so recalling the approach is the rep.
+        <span class="cited">(<a href="https://doi.org/10.1111/j.1467-9280.2006.01693.x" target="_blank" rel="noopener">Roediger &amp; Karpicke, 2006</a>)</span></p></div>
+      <div><h3>Difficulty is desirable</h3><p>Practice that feels harder often sticks better. Struggling for twenty minutes before a problem cracks is the point, not a sign you're behind.
+        <span class="cited">(<a href="https://bjorklab.psych.ucla.edu/wp-content/uploads/sites/13/2016/04/EBjork_RBjork_2011.pdf" target="_blank" rel="noopener">Bjork &amp; Bjork, 2011</a>)</span></p></div>
+      <div><h3>Interleaving trains discrimination</h3><p>Mixing patterns removes the category hint and rehearses what an interview actually tests: spotting which strategy applies before anyone names it. A randomized trial of interleaved practice found a large effect over blocked practice.
+        <span class="cited">(<a href="https://doi.org/10.1007/s11251-007-9015-8" target="_blank" rel="noopener">Rohrer &amp; Taylor, 2007</a>; <a href="https://doi.org/10.1037/edu0000367" target="_blank" rel="noopener">Rohrer et al., 2020</a>)</span></p></div>
     </div>
   </section>
 
@@ -1924,16 +1933,20 @@ function renderAbout(){
       </div>
       <p class="ladder-text">${gaps.map(g=>g+'d').join(' → ')}, where the cap holds.</p>
     </div>
-    <p class="mnote">Problems you find hard come back sooner; ones you own stretch to month-plus gaps and count as <strong>solid</strong> at ${SOLID_AT} days. It's SM-2 adapted to what re-solving code costs, so the daily load stops growing as the list does.</p>
+    <p class="mnote">Problems you find hard come back sooner; ones you own stretch to month-plus gaps and count as <strong>solid</strong> at ${SOLID_AT} days. It's <span class="cited"><a href="https://super-memory.com/english/ol/sm2.htm" target="_blank" rel="noopener">SM-2</a></span> adapted to what re-solving code costs, so the daily load stops growing as the list does.</p>
   </section>
 
   <section>
     <h2>Rules the app enforces for you</h2>
     <div class="method-defs">
-      <div><h3>New problems pause at ${NEW_GATE} due reviews</h3><p>Adding material on top of an overdue pile only grows the pile. The new queue reopens by itself once you've caught up.</p></div>
-      <div><h3>New problems don't arrive in list order</h3><p>Once ${INTERLEAVE_AFTER} patterns are in play, consecutive additions come from different categories, so the strategy is never announced in advance.</p></div>
-      <div><h3>The first problem in a pattern comes with a worked example</h3><p>Worked examples beat unguided struggle for a genuine novice. After that first contact the support drops away and retrieval takes over.</p></div>
-      <div><h3>Repeated failures leave the normal queue</h3><p>When 2 of the last 3 attempts needed help, the problem becomes a leech and asks you to re-derive the idea before coding. Two clean solves return it to rotation.</p></div>
+      <div><h3>New problems pause at ${NEW_GATE} due reviews</h3><p>Adding material on top of an overdue pile only grows the pile. The new queue reopens by itself once you've caught up.
+        <span class="cited">(after the <a href="https://docs.ankiweb.net/leeches.html" target="_blank" rel="noopener">Anki manual</a>)</span></p></div>
+      <div><h3>New problems don't arrive in list order</h3><p>Once ${INTERLEAVE_AFTER} patterns are in play, consecutive additions come from different categories, so the strategy is never announced in advance.
+        <span class="cited">(<a href="https://doi.org/10.1037/edu0000367" target="_blank" rel="noopener">Rohrer et al., 2020</a>)</span></p></div>
+      <div><h3>The first problem in a pattern comes with a worked example</h3><p>Worked examples beat unguided struggle for a genuine novice. After that first contact the support drops away and retrieval takes over.
+        <span class="cited">(the worked-example effect and expertise reversal, <a href="https://doi.org/10.1023/A:1022193728205" target="_blank" rel="noopener">Sweller et al., 1998</a>)</span></p></div>
+      <div><h3>Repeated failures leave the normal queue</h3><p>When 2 of the last 3 attempts needed help, the problem becomes a leech and asks you to re-derive the idea before coding. Two clean solves return it to rotation.
+        <span class="cited">(leech handling after the <a href="https://docs.ankiweb.net/leeches.html" target="_blank" rel="noopener">Anki manual</a>)</span></p></div>
     </div>
   </section>
 
@@ -1957,7 +1970,10 @@ function renderAbout(){
       </tbody>
     </table>
     <div class="method-defs">
-      <div><h3>Recall — you type the answer, you don't flip a card</h3><p><a href="https://doi.org/10.3758/s13421-012-0245-x" target="_blank" rel="noopener">Overt retrieval</a> beats deciding you already know it, which is the exact gap that reading AI output opens up. Capture what you had to look up mid-solve and write the answer later; a leech usually means the card should be split under <a href="https://super-memory.com/articles/20rules.htm" target="_blank" rel="noopener">the minimum information principle</a>.</p></div>
+      <div><h3>Recall — you type the answer, you don't flip a card</h3><p>Overt retrieval beats deciding you already know it, which is the exact gap that reading AI output opens up.
+        <span class="cited">(<a href="https://doi.org/10.3758/s13421-012-0245-x" target="_blank" rel="noopener">Putnam &amp; Roediger, 2013</a>)</span>
+        Capture what you had to look up mid-solve and write the answer later; a leech usually means the card should be split under the minimum information principle.
+        <span class="cited">(<a href="https://super-memory.com/articles/20rules.htm" target="_blank" rel="noopener">Wozniak's twenty rules</a>)</span></p></div>
       <div><h3>Katas — a form repeated until the movements stop being decisions</h3><p>The 23 forms are inspired by <a href="https://github.com/ThePrimeagen/kata-machine" target="_blank" rel="noopener">ThePrimeagen's kata-machine</a>, scheduled here and run in your clone of <a href="https://github.com/atarantino/kata-typescript" target="_blank" rel="noopener">kata-typescript</a>, where <code>npm run due</code> scaffolds only what's decaying. Grade hesitation, not the clock.</p></div>
     </div>
   </section>

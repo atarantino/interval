@@ -9,6 +9,7 @@
  */
 
 import type * as http from "../http.js";
+import type * as recover from "../recover.js";
 import type * as sync from "../sync.js";
 
 import type {
@@ -19,6 +20,7 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   http: typeof http;
+  recover: typeof recover;
   sync: typeof sync;
 }>;
 

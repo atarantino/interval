@@ -10,4 +10,9 @@ export default defineSchema({
     state: v.any(),
     updated: v.number(),
   }).index("by_key", ["key"]),
+  keyOwners: defineTable({
+    subject: v.string(),
+    key: v.string(),
+    createdAt: v.number(),
+  }).index("by_subject", ["subject"]),
 });

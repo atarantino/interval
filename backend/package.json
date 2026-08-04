@@ -2,9 +2,11 @@
   "name": "neetcode-spaced-reps-backend",
   "private": true,
   "dependencies": {
-    "convex": "^1.17.0"
+    "convex": "^1.17.0",
+    "jose": "^6.2.8"
   },
   "devDependencies": {
+    "@types/node": "^26.1.2",
     "typescript": "^7.0.2"
   }
 }

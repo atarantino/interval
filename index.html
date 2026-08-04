@@ -257,6 +257,7 @@ input[type=search]{flex:1; min-width:200px}
   color:var(--ink-2); background:var(--page); border:1px solid var(--ring); border-radius:8px; padding:7px 10px;
 }
 .syncbar strong{color:var(--ink-1)}
+.syncbar .signin-copy{margin-top:8px}
 /* ---- recall + katas ---- */
 .kata .prob-head{cursor:pointer}
 .kq{font-weight:600; font-size:15px}
@@ -451,7 +452,9 @@ function save(){ try{ localStorage.setItem(LS_KEY, JSON.stringify(state)); }catc
    the next successful round-trip converges. The key is a 128-bit capability: pairing
    is "open this link on the other machine", same trust model as a private gist URL. */
 const SYNC_URL = 'https://kindred-eel-975.convex.site/sync';
+const GOOGLE_CLIENT_ID = '635673772405-6v6biu4bio4cs1g33odimg40a65knhfa.apps.googleusercontent.com';
 const SYNC_KEY_LS = 'ncsr-sync-key';
+const GOOGLE_EMAIL_LS = 'ncsr-google-email';
 let syncTimer=null, syncState='off';   // off | ok | dirty | error
 let syncStamp=null;
 function syncKey(){ return localStorage.getItem(SYNC_KEY_LS) || null; }
@@ -521,33 +524,37 @@ function mergeStates(a,b){
     nextKataId: Math.max(a.nextKataId||1, b.nextKataId||1),
   });
 }
-let syncInFlight=false;
+let syncInFlight=null;
 async function syncNow(){
-  const key = syncKey(); if(!key || syncInFlight) return;
-  syncInFlight=true;
-  const sentSnapshot = JSON.stringify(state);
-  try{
-    const res = await fetch(SYNC_URL, {method:'POST', headers:{'Content-Type':'application/json'},
-      body: `{"key":${JSON.stringify(key)},"state":${sentSnapshot}}`});
-    if(!res.ok) throw new Error('HTTP '+res.status);
-    const serverMerged = migrate((await res.json()).state);
-    // merge into *current* state — it may have moved while the request was in flight
-    const next = mergeStates(state, serverMerged);
-    if(JSON.stringify(next) !== JSON.stringify(state)){
-      state = next;
-      try{ localStorage.setItem(LS_KEY, JSON.stringify(state)); }catch(e){}
-      render();
+  const key = syncKey(); if(!key) return;
+  if(syncInFlight) return syncInFlight;
+  const request = (async()=>{
+    const sentSnapshot = JSON.stringify(state);
+    try{
+      const res = await fetch(SYNC_URL, {method:'POST', headers:{'Content-Type':'application/json'},
+        body: `{"key":${JSON.stringify(key)},"state":${sentSnapshot}}`});
+      if(!res.ok) throw new Error('HTTP '+res.status);
+      const serverMerged = migrate((await res.json()).state);
+      // merge into *current* state — it may have moved while the request is in flight
+      const next = mergeStates(state, serverMerged);
+      if(JSON.stringify(next) !== JSON.stringify(state)){
+        state = next;
+        try{ localStorage.setItem(LS_KEY, JSON.stringify(state)); }catch(e){}
+        render();
+      }
+      syncState='ok'; syncStamp=new Date();
+      // if local changes landed mid-flight, the server doesn't have them yet — push again
+      if(JSON.stringify(state) !== sentSnapshot && JSON.stringify(state) !== JSON.stringify(serverMerged)){
+        clearTimeout(syncTimer); syncTimer=setTimeout(syncNow, 400);
+      }
+    }catch(e){
+      syncState='error';
     }
-    syncState='ok'; syncStamp=new Date();
-    // if local changes landed mid-flight, the server doesn't have them yet — push again
-    if(JSON.stringify(state) !== sentSnapshot && JSON.stringify(state) !== JSON.stringify(serverMerged)){
-      clearTimeout(syncTimer); syncTimer=setTimeout(syncNow, 400);
-    }
-  }catch(e){
-    syncState='error';
-  }
-  syncInFlight=false;
-  paintSync();
+    paintSync();
+  })();
+  syncInFlight=request;
+  try{ await request; }
+  finally{ if(syncInFlight===request) syncInFlight=null; }
 }
 function paintSync(){
   const el=document.getElementById('syncBtn'); if(!el) return;
@@ -556,6 +563,86 @@ function paintSync(){
   el.title = syncState==='off' ? 'Set up cross-device sync' :
     syncState==='ok' ? `Synced ${syncStamp?syncStamp.toLocaleTimeString():''}` :
     syncState==='dirty' ? 'Changes pending' : 'Sync failed — will retry on next change';
+}
+
+let googleIdentityPromise=null;
+function googleConfigured(){ return GOOGLE_CLIENT_ID!=='PLACEHOLDER_CLIENT_ID'; }
+function googleEmail(){ return googleConfigured() ? localStorage.getItem(GOOGLE_EMAIL_LS) : null; }
+function loadGoogleIdentity(){
+  if(!googleConfigured()) return Promise.resolve(false);
+  if(googleIdentityPromise) return googleIdentityPromise;
+  googleIdentityPromise = new Promise((resolve,reject)=>{
+    const ready=()=>{
+      try{
+        google.accounts.id.initialize({client_id:GOOGLE_CLIENT_ID, callback:adoptGoogleCredential});
+        resolve(true);
+      }catch(err){ reject(err); }
+    };
+    if(window.google?.accounts?.id) return ready();
+    const script=document.createElement('script');
+    script.src='https://accounts.google.com/gsi/client';
+    script.async=true;
+    script.onload=ready;
+    script.onerror=()=>reject(new Error('Google Identity Services failed to load'));
+    document.head.appendChild(script);
+  });
+  return googleIdentityPromise;
+}
+function renderGoogleSignInButton(){
+  const slot=syncbar.querySelector('[data-google-signin]');
+  if(!slot) return;
+  loadGoogleIdentity().then(()=>{
+    if(!slot.isConnected) return;
+    google.accounts.id.renderButton(slot, {type:'standard', theme:'outline', size:'large', text:'signin_with'});
+  }).catch(()=>{ if(slot.isConnected) slot.textContent='Google sign-in is unavailable right now.'; });
+}
+function emailFromGoogleCredential(credential){
+  try{
+    const part=credential.split('.')[1];
+    const raw=atob(part.replace(/-/g,'+').replace(/_/g,'/').padEnd(Math.ceil(part.length/4)*4,'='));
+    const payload=JSON.parse(new TextDecoder().decode(Uint8Array.from(raw,c=>c.charCodeAt(0))));
+    return typeof payload.email==='string' && payload.email ? payload.email : 'Google account';
+  }catch(_){ return 'Google account'; }
+}
+async function post(path, body){
+  const res=await fetch(new URL(path,SYNC_URL), {method:'POST', headers:{'Content-Type':'application/json'},
+    body:JSON.stringify(body)});
+  const result=await res.json().catch(()=>({}));
+  if(!res.ok) throw new Error(result.error||`HTTP ${res.status}`);
+  return result;
+}
+async function adoptGoogleCredential(response){
+  const credential=response?.credential;
+  if(typeof credential!=='string' || !credential) return toast('Could not sign in — try again');
+  try{
+    const email=emailFromGoogleCredential(credential);
+    const local = syncKey();
+    // Flush this browser's lineage to its own key before adopting the account key —
+    // syncNow() only ever pushes the currently selected key, so anything still local
+    // would be stranded under the old one. syncNow() swallows its errors, so check
+    // the resulting state rather than relying on it to throw.
+    if(local){
+      await syncNow();
+      if(syncState==='error') return toast('Could not reach sync — not signing in until this device is caught up');
+    }
+    const {key} = await post('/recover', {credential, key:local});
+    if(typeof key!=='string' || !/^[a-f0-9]{32,64}$/.test(key)) throw new Error('Bad recovery key');
+    if(key !== local){
+      if(local) localStorage.setItem('ncsr-sync-key-prev', local);
+      localStorage.setItem(SYNC_KEY_LS, key);
+    }
+    await syncNow();
+    try{ localStorage.setItem(GOOGLE_EMAIL_LS, email); }catch(_){}
+    paintSync(); paintSyncbar();
+    toast('Signed in — your log is recoverable on any device');
+  }catch(_){ toast('Could not sign in — try again'); }
+}
+async function signOutGoogle(){
+  try{
+    if(await loadGoogleIdentity()) google.accounts.id.disableAutoSelect();
+  }catch(_){}
+  localStorage.removeItem(GOOGLE_EMAIL_LS);
+  paintSyncbar();
 }
 
 /* ---------- scheduler: SM-2 adapted ----------
@@ -1880,17 +1967,26 @@ const syncbar = document.getElementById('syncbar');
 function paintSyncbar(){
   if(syncbar.style.display==='none') return;
   const key = syncKey();
+  const showGoogle = googleConfigured();
+  const email = googleEmail();
   if(!key){
     syncbar.innerHTML = `<strong>Cross-device sync is off.</strong> Your log lives only in this browser.
       Turning it on stores the merged log on your Convex backend, keyed by a random 128-bit link — anyone with the link has the data, so share it only with your own devices.
-      <div class="srow"><button class="primary" data-syncon>Turn on sync</button></div>`;
+      <div class="srow"><button class="primary" data-syncon>Turn on sync</button>${showGoogle?'<div data-google-signin></div>':''}</div>
+      ${showGoogle?'<div class="signin-copy">Signing in turns on sync and lets you get back to your log on any device — no pairing link needed.</div>':''}`;
   } else {
     const link = location.origin.startsWith('http') ? `${location.origin}${location.pathname}#k=${key}` : `https://intervalreps.vercel.app/#k=${key}`;
     syncbar.innerHTML = `<strong>Sync is on.</strong> Open this link once on another device and the two logs merge — attempts union, deletions stick, newest deck edit wins.
       <div class="srow"><input type="text" readonly value="${esc(link)}" id="pairLink"><button class="iconbtn" data-synccopy>Copy</button></div>
       <div class="srow"><button class="iconbtn" data-syncnow>Sync now</button><button class="ghost" data-syncoff>Turn off on this device (keeps local data)</button></div>
+      ${showGoogle ? email
+        ? `<div class="signin-copy">Signed in as ${esc(email)} — open Interval anywhere and sign in to pick up your log.</div>
+          <div class="srow"><button class="ghost" data-google-signout>Sign out of Google on this device (keeps local data and sync)</button></div>`
+        : `<div class="signin-copy">Sign in with Google so you can get back in without this link.</div>
+          <div class="srow"><div data-google-signin></div></div>` : ''}
       <span class="kofi-nudge">Sync runs on a small backend I pay for out of pocket — if it earns its keep, <a href="https://ko-fi.com/adamtarantino" target="_blank" rel="noopener">buy me a coffee ☕</a></span>`;
   }
+  renderGoogleSignInButton();
 }
 document.getElementById('syncBtn').addEventListener('click', ()=>{
   syncbar.style.display = syncbar.style.display==='none' ? '' : 'none';
@@ -1898,6 +1994,7 @@ document.getElementById('syncBtn').addEventListener('click', ()=>{
 });
 syncbar.addEventListener('click', e=>{
   if(e.target.closest('[data-syncon]')){
+    localStorage.removeItem(GOOGLE_EMAIL_LS);
     localStorage.setItem(SYNC_KEY_LS, newSyncKey());
     paintSyncbar(); syncNow(); toast('Sync on — open the link on your other device');
   } else if(e.target.closest('[data-synccopy]')){
@@ -1908,6 +2005,8 @@ syncbar.addEventListener('click', e=>{
   } else if(e.target.closest('[data-syncoff]')){
     localStorage.removeItem(SYNC_KEY_LS); syncState='off';
     paintSync(); paintSyncbar(); toast('Sync off — local data untouched');
+  } else if(e.target.closest('[data-google-signout]')){
+    signOutGoogle();
   }
 });
 

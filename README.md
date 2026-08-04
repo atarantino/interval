@@ -28,7 +28,7 @@ The **Method** tab in the app explains the research behind each rule.
 
 ## How it works
 
-The entire app is one static `index.html` — no framework, build step, or bundled client dependencies. State lives in `localStorage`, with JSON export and import as a manual backup. The page contains list metadata (names, categories, difficulty, and links) plus your own attempt log, Recall cards, and kata schedule; it never stores problem statements or solutions.
+The entire app is one static `index.html` — no framework, build step, or bundled client dependencies. State lives in `localStorage`. The page contains list metadata (names, categories, difficulty, and links) plus your own attempt log, Recall cards, and kata schedule; it never stores problem statements or solutions.
 
 Cross-device sync is entirely optional. You can turn it on with a secret pairing link and no account, or sign in with Google. Both routes use the same random 128-bit sync key; Google only associates your account with that key so you can recover the log on a new device or after clearing browser storage. It is not a separate account-based data path.
 

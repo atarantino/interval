@@ -226,14 +226,89 @@ input[type=search]{flex:1; min-width:200px}
 .heat-legend{display:flex; align-items:center; gap:4px; font-size:11.5px; color:var(--ink-muted); margin-bottom:8px}
 .heat-legend .hcell{width:11px;height:11px}
 .sharebar{display:flex; justify-content:flex-end; gap:8px; margin:0 0 10px}
-/* About */
-.prose{max-width:660px; font-size:14.5px; color:var(--ink-2)}
-.prose h3{color:var(--ink-1); font-size:14.5px; margin:22px 0 6px}
-.prose p{margin:0 0 12px}
-.prose .refs{font-size:12.5px; color:var(--ink-muted); border-top:1px solid var(--grid); padding-top:12px; margin-top:20px}
-.sched-table{border-collapse:collapse; font-size:13px; margin:8px 0 14px}
-.sched-table td,.sched-table th{border:1px solid var(--grid); padding:6px 12px; text-align:left}
-.sched-table th{font-weight:600; color:var(--ink-1); background:var(--chip-bg)}
+/* Method — editorial notes inside the app's quiet, utilitarian shell */
+.method{max-width:760px; margin:0 auto; color:var(--ink-2)}
+.method-hero{padding:18px 0 30px; border-bottom:1px solid var(--grid)}
+.method-kicker{
+  margin:0 0 10px; color:var(--blue); font-size:11px; line-height:1.2; font-weight:750;
+  letter-spacing:.11em; text-transform:uppercase;
+}
+.method h1{
+  max-width:15ch; margin:0; color:var(--ink-1);
+  font-family:ui-serif,Georgia,Cambria,"Times New Roman",serif;
+  font-size:clamp(30px,5.5vw,46px); line-height:1.04; letter-spacing:-.035em;
+}
+.method-dek{max-width:62ch; margin:16px 0 0; font-size:16px; line-height:1.65; text-wrap:pretty}
+.method-note{
+  display:grid; grid-template-columns:112px 1fr; gap:18px; margin-top:18px; padding:14px 0 0;
+  border-top:1px dashed var(--grid); font-size:13px; line-height:1.6;
+}
+.method-note strong{color:var(--ink-1)}
+.method-note-label{color:var(--ink-muted); font-size:11px; font-weight:750; letter-spacing:.08em; text-transform:uppercase}
+.method-section{margin-top:48px}
+.method-section-head{display:grid; grid-template-columns:34px 1fr; gap:12px; align-items:baseline; margin-bottom:18px}
+.method-index{
+  color:var(--blue); font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  font-size:11px; font-weight:700;
+}
+.method h2{
+  margin:0; color:var(--ink-1); font-family:ui-serif,Georgia,Cambria,"Times New Roman",serif;
+  font-size:25px; line-height:1.15; letter-spacing:-.02em;
+}
+.method h3{margin:0; color:var(--ink-1); font-size:14px; line-height:1.4}
+.method p{margin:0 0 12px}
+.method-grid{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:22px 28px}
+.method-point{padding-top:12px; border-top:2px solid var(--grid); font-size:13.5px; line-height:1.62}
+.method-point strong{display:block; margin-bottom:4px; color:var(--ink-1); font-size:14px}
+.method-schedule{
+  overflow:hidden; border:1px solid var(--ring); border-radius:12px; background:var(--surface-1);
+}
+.method-schedule-intro{padding:14px 16px 0; font-size:13.5px}
+.sched-scroll{overflow-x:auto}
+.sched-table{width:100%; border-collapse:collapse; font-size:13px}
+.sched-table td,.sched-table th{padding:10px 16px; text-align:left; border-top:1px solid var(--grid)}
+.sched-table th{color:var(--ink-muted); background:var(--chip-bg); font-size:10.5px; letter-spacing:.07em; text-transform:uppercase}
+.sched-table td:first-child{color:var(--ink-1); font-weight:650; white-space:nowrap}
+.method-after{margin-top:14px; font-size:13.5px; line-height:1.65}
+.method-rules{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px}
+.method-rule{min-height:100%; padding:16px; border:1px solid var(--ring); border-radius:11px; background:var(--surface-1)}
+.method-rule-num{
+  display:block; margin-bottom:16px; color:var(--blue); font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  font-size:11px; font-weight:700;
+}
+.method-rule h3{margin-bottom:6px}
+.method-rule p{font-size:13px; line-height:1.58}
+.method-callout{padding:18px 20px; border-left:3px solid var(--blue); border-radius:0 10px 10px 0; background:var(--chip-bg)}
+.method-callout h3{margin-bottom:7px}
+.method-callout p{font-size:13.5px; line-height:1.65}
+.method-tempos{display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); margin:18px 0 30px; border-block:1px solid var(--grid)}
+.method-tempo{padding:16px 14px; border-right:1px solid var(--grid)}
+.method-tempo:first-child{padding-left:0}.method-tempo:last-child{padding-right:0; border-right:0}
+.method-tempo span{display:block; color:var(--blue); font-size:11px; font-weight:750; letter-spacing:.07em; text-transform:uppercase}
+.method-tempo strong{display:block; margin-top:4px; color:var(--ink-1); font-family:ui-serif,Georgia,Cambria,"Times New Roman",serif; font-size:18px}
+.method-tempo small{display:block; margin-top:2px; color:var(--ink-muted); font-size:11.5px}
+.method-track{display:grid; grid-template-columns:170px 1fr; gap:28px; padding:24px 0; border-top:1px solid var(--grid)}
+.method-track:last-of-type{border-bottom:1px solid var(--grid)}
+.method-track-label span{display:block; margin-bottom:5px; color:var(--blue); font-size:10.5px; font-weight:750; letter-spacing:.08em; text-transform:uppercase}
+.method-track-label h3{font-family:ui-serif,Georgia,Cambria,"Times New Roman",serif; font-size:20px; letter-spacing:-.015em}
+.method-track-body{font-size:13.5px; line-height:1.65}
+.method-loop{margin-top:34px; padding:20px; border:1px dashed var(--baseline); border-radius:12px}
+.method-loop h3{margin-bottom:7px}
+.method-loop p{font-size:13.5px; line-height:1.65}
+.method .refs{margin-top:24px; padding-top:14px; border-top:1px solid var(--grid); color:var(--ink-muted); font-size:12px}
+.method .refs summary{width:max-content; cursor:pointer; color:var(--ink-2); font-weight:650}
+.method .refs div{margin-top:12px; line-height:1.65}
+@media (max-width:640px){
+  .method{max-width:none}
+  .method-hero{padding-top:8px}
+  .method-note,.method-track{grid-template-columns:1fr; gap:7px}
+  .method-grid,.method-rules{grid-template-columns:1fr}
+  .method-tempos{grid-template-columns:1fr}
+  .method-tempo,.method-tempo:first-child,.method-tempo:last-child{padding:12px 0; border-right:0; border-bottom:1px solid var(--grid)}
+  .method-tempo:last-child{border-bottom:0}
+  .method-section{margin-top:40px}
+  .sched-table{min-width:590px}
+}
 /* leeches */
 .card.leech{border-color:var(--serious); background:linear-gradient(0deg,var(--surface-1),var(--surface-1))}
 .leech-tag{font-size:11px; font-weight:700; padding:1px 8px; border-radius:999px; background:var(--serious); color:#fff}
@@ -408,9 +483,6 @@ input[type=search]{flex:1; min-width:200px}
     <span class="streak-chip" id="streakChip" title="Consecutive days with at least one logged attempt">🔥 <span id="streakVal">0</span>d</span>
     <button class="iconbtn" id="syncBtn" title="Set up cross-device sync" aria-expanded="false" aria-controls="syncbar">Sync</button>
     <button class="iconbtn" id="themeBtn" title="Toggle light/dark">◐</button>
-    <button class="iconbtn" id="exportBtn" title="Download your log as JSON">Export</button>
-    <button class="iconbtn" id="importBtn" title="Restore a log from JSON">Import</button>
-    <input type="file" id="importFile" accept=".json" style="display:none">
   </header>
   <div id="syncbar" class="syncbar" role="region" aria-label="Cross-device sync" style="display:none"></div>
   <nav class="tabs" id="tabs">
@@ -424,7 +496,7 @@ input[type=search]{flex:1; min-width:200px}
   <main id="view"></main>
   <footer class="sitefoot">
     <p class="promise">
-      <span>Free · no accounts · your data stays in your browser</span>
+      <span>Free · no account required · local-first</span>
       <span><span class="support-separator">· </span><a href="https://ko-fi.com/adamtarantino" target="_blank" rel="noopener">☕ buy me a coffee</a></span>
     </p>
     <div class="credit">
@@ -1814,56 +1886,92 @@ function renderStats(){
 function renderAbout(){
   const info=TIER_INFO[state.tier];
   const listUrl=`https://neetcode.io/practice/practice/${info.list}`;
-  return `<div class="prose">
-  <h3>What this is</h3>
-  <p>A trainer for the <a href="${listUrl}" target="_blank" rel="noopener">${info.label}</a> that schedules when you should <em>re-solve</em> each problem, using the two most robust findings in learning science: the <strong>spacing effect</strong> and the <strong>testing effect</strong>.</p>
-  <p><strong>About the lists.</strong> Problem names, categories and links follow the lists curated by
-    <a href="https://neetcode.io/" target="_blank" rel="noopener">NeetCode / Navdeep Singh</a>.
-    This independent trainer stores only that metadata and your own logs—never problem statements or solutions.
-    NeetCode's videos, courses and <a href="https://neetcode.io/pro" target="_blank" rel="noopener">Pro membership</a> support the original work.
-    This app is not affiliated with NeetCode or LeetCode.</p>
-  <h3>The research, briefly</h3>
-  <p><strong>Spacing beats cramming.</strong> Cepeda, Pashler &amp; colleagues' meta-analysis of 254 comparisons found distributed practice reliably outperforms massed practice, and that the optimal gap between reviews <em>grows</em> with how long you want to remember something. Re-solving a problem days or weeks later — right around when you'd start to forget — is what makes the memory durable.</p>
-  <p><strong>Retrieval is the workout.</strong> Roediger &amp; Karpicke showed that <em>testing yourself</em> produces far better long-term retention than re-reading or re-watching. That's why this app asks you to re-solve from a blank editor, and hides your old notes behind a click — recalling the approach yourself is the rep. Watching the solution video again is the weakest form of practice, so it schedules the tightest redo.</p>
-  <p><strong>Difficulty is desirable.</strong> Bjork's "desirable difficulties" work shows that effortful, slightly-uncomfortable practice feels worse but sticks better. Struggling for 20 minutes before cracking it is a feature.</p>
-  <p><strong>Interleaving helps discrimination.</strong> Mixing patterns (Rohrer's interleaving studies) trains the skill interviews actually test — recognizing <em>which</em> pattern applies. Your review queue naturally interleaves old patterns while you push into new categories.</p>
-  <h3>How scheduling works (SM-2, adapted)</h3>
-  <p>Each problem carries an <em>ease factor</em> (starts at 2.5) and an <em>interval</em>. Your result sets the next review:</p>
-  <table class="sched-table">
-    <tr><th>Result</th><th>Next review</th><th>Ease</th></tr>
-    <tr><td>⚡ Solved cold</td><td>first time: 7 days; after that: interval × ease (7 → ~17 → ~40 → ~100d, capped at 120)</td><td>+0.05</td></tr>
-    <tr><td>💡 Needed hints</td><td>2 days</td><td>−0.15</td></tr>
-    <tr><td>▶ Watched video</td><td>tomorrow</td><td>−0.20</td></tr>
-  </table>
-  <p>Problems you find hard develop a low ease factor and come back more often; ones you own graduate to month-plus intervals. A problem is <strong>solid</strong> once its interval reaches 30 days. This evolves the sheet rule you were using (next-day for hints/video, +7 for cold) into expanding intervals, so the review load doesn't pile up linearly as you work through the full list.</p>
-  <h3>Four rules the queue enforces for you</h3>
-  <p><strong>1. New problems pause when the backlog hits ${NEW_GATE}.</strong> This is Anki's own guidance for an overdue pile: stop introducing new material until you've caught up, because new cards on top of a backlog compound it. The queue reopens on its own once you're back under the line.</p>
-  <p><strong>2. New problems arrive interleaved, not in NeetCode order.</strong> Rohrer, Dedrick, Hartwig &amp; Cheung ran a randomised controlled trial across 54 classrooms: interleaved practice beat blocked practice with an effect size of d ≈ 0.83. The mechanism is the point — when problems come blocked by pattern, you know the strategy before you've read the question. An interview never does that. So once you have ${INTERLEAVE_AFTER}+ patterns in play, no two consecutive new problems come from the same one.</p>
-  <p><strong>3. The first problem in a new pattern says "watch the video".</strong> Cognitive load theory's worked-example effect: for genuine novices, studying a solution beats struggling toward one. The effect reverses with expertise, which is why it only applies to your first contact with a pattern — everywhere else, struggle is the point.</p>
-  <p><strong>4. Repeated failures become leeches.</strong> Anki tags a card a leech when it keeps lapsing, and the fix is never "try harder" — it's to change how the thing is encoded. Here, 2 non-cold results in your last 3 attempts pulls a problem out of the normal queue and asks you to re-derive the insight in a sentence before you touch the keyboard. Two clean solves clears it.</p>
-  <h3>Transfer tests</h3>
-  <p>Once you've solved a problem cold twice, re-solving it mostly measures whether you remember <em>that problem</em>. So the card offers you an unseen sibling from the same pattern instead. Solving that cold is strictly stronger evidence than another rep on the one you've memorised, so it advances both cards' schedules. This is the closest thing the app has to a real interview: same pattern, no warning, blank editor.</p>
-  <h3>Three learning objects, three tempos</h3>
-  <p>A problem is a 30-minute problem-solving episode. A recall fact — “counter map over a <code>string[]</code>” — is a five-second production. A kata is a 10-minute implementation form. Treating those as one queue made the schedule lie about the cost of a rep, so each now has its own track and spacing.</p>
-  <h3>Recall — an Anki deck for code</h3>
-  <p><strong>Five-second facts get the long memory curve.</strong> Recall starts at a 2-day interval and can stretch to a full year. JavaScript, TypeScript and SQL cards can run in the browser; assertions make correctness objective, while concept cards still demand that you say the answer before revealing it.</p>
-  <p><strong>You type the answer, you don't flip a card.</strong>
-    <a href="https://doi.org/10.3758/s13421-012-0245-x" target="_blank" rel="noopener">Putnam &amp; Roediger's work on overt retrieval</a>
-    is the reason: actually producing an answer beats thinking “yeah, I know this.” That gap is exactly the failure mode of AI-assisted fluency — reading a solution feels like knowing it.</p>
-  <p><strong>Capture beats curation.</strong> Recall starts empty and fills from friction. Every problem log has one field for whatever you had to look up; the capture waits outside the queue until you write its answer. One field in the moment, authoring later.</p>
-  <p><strong>A Recall leech is usually a malformed card.</strong>
-    <a href="https://super-memory.com/articles/20rules.htm" target="_blank" rel="noopener">Wozniak's minimum information principle</a>
-    says the fix is to split a prompt that asks two things at once, not to grind the same overloaded card harder.</p>
-  <h3>Katas — implementation forms</h3>
-  <p><strong>Kata 型</strong> means a martial-arts form repeated until the movements stop being decisions; Dave Thomas borrowed the idea into programming with code katas in 2003. Here, each kata is a 10–20 minute data-structure implementation performed from memory.</p>
-  <p><strong>The lineage runs through kata-machine.</strong> The 23 forms are inspired by
-    <a href="https://github.com/ThePrimeagen/kata-machine" target="_blank" rel="noopener">ThePrimeagen's kata-machine</a>
-    and scheduled here, but executed in your own clone of <a href="https://github.com/atarantino/kata-typescript" target="_blank" rel="noopener">kata-typescript</a> with a real editor and test runner. No kata-machine code or tests are bundled in this app. Rather than regenerating all 23 daily as massed practice, <code>npm run due</code> reads your sync key and scaffolds exactly what's decaying.</p>
-  <p><strong>Weekly until boring, then monthly.</strong> A successful interval has a 7-day floor and a 180-day cap; “Had to think” returns in at least 3 days and a blank in 2. Grade hesitation, not wall-clock time: “Instant” means you typed the form without stopping to decide what comes next.</p>
-  <p><strong>A kata leech means the form hasn't encoded.</strong> Splitting does not apply to a form. Re-derive the algorithm on paper or reread the reference implementation, then come back for another full implementation instead of burning another doomed rep.</p>
-  <h3>A sane daily loop</h3>
-  <p>Leeches first (they're cheap — you're recalling an idea, not grinding code), then the review queue, then whatever new problems the gate lets through. Cap sessions at ~1 hour. Give a new problem 30–45 minutes before escalating, and escalate through hints rather than jumping to the solution — then re-solve it the next day, which is what turns recognising a solution into being able to generate one.</p>
-  <div class="refs">
+  return `<article class="method">
+  <header class="method-hero">
+    <p class="method-kicker">The system behind the queue</p>
+    <h1>Practice for the moment the pattern isn't named.</h1>
+    <p class="method-dek">Interval schedules when you should <em>re-solve</em> each problem in the
+      <a href="${listUrl}" target="_blank" rel="noopener">${info.label}</a>, using the spacing effect and testing effect to turn recognition into recall.</p>
+    <div class="method-note">
+      <span class="method-note-label">About the lists</span>
+      <div>Problem names, categories and links follow the lists curated by
+        <a href="https://neetcode.io/" target="_blank" rel="noopener">NeetCode / Navdeep Singh</a>.
+        Interval stores only that metadata and your own logs—never problem statements or solutions.
+        NeetCode's videos, courses and <a href="https://neetcode.io/pro" target="_blank" rel="noopener">Pro membership</a> support the original work.
+        This app is not affiliated with NeetCode or LeetCode.</div>
+    </div>
+  </header>
+
+  <section class="method-section">
+    <div class="method-section-head"><span class="method-index">01</span><h2>The research, briefly</h2></div>
+    <div class="method-grid">
+      <div class="method-point"><strong>Spacing beats cramming.</strong><p>Cepeda, Pashler &amp; colleagues found distributed practice reliably outperforms massed practice. The useful gap grows with the desired retention interval, so a problem returns right around when you would start to forget it.</p></div>
+      <div class="method-point"><strong>Retrieval is the workout.</strong><p>Testing yourself produces better long-term retention than re-reading. Interval asks you to re-solve from a blank editor and keeps old notes behind a click; recalling the approach is the rep.</p></div>
+      <div class="method-point"><strong>Difficulty is desirable.</strong><p>Bjork's work shows that effortful, slightly uncomfortable practice can feel worse while sticking better. Struggling for 20 minutes before cracking a problem is a feature.</p></div>
+      <div class="method-point"><strong>Interleaving trains discrimination.</strong><p>Mixing patterns removes the category hint and practices the skill interviews actually test: recognizing which strategy applies before anyone names it.</p></div>
+    </div>
+  </section>
+
+  <section class="method-section">
+    <div class="method-section-head"><span class="method-index">02</span><h2>How scheduling works</h2></div>
+    <div class="method-schedule">
+      <p class="method-schedule-intro">Each problem carries an <em>ease factor</em> (starting at 2.5) and an <em>interval</em>. Your result sets the next review.</p>
+      <div class="sched-scroll"><table class="sched-table">
+        <tr><th>Result</th><th>Next review</th><th>Ease</th></tr>
+        <tr><td>⚡ Solved cold</td><td>First: 7 days. Then interval × ease, capped at 120 days.</td><td>+0.05</td></tr>
+        <tr><td>💡 Needed hints</td><td>2 days</td><td>−0.15</td></tr>
+        <tr><td>▶ Watched video</td><td>Tomorrow</td><td>−0.20</td></tr>
+      </table></div>
+    </div>
+    <p class="method-after">Problems you find hard come back more often; ones you own graduate to month-plus intervals. A problem becomes <strong>solid</strong> at 30 days. This adapts SM-2 to the cost of re-solving code problems without letting the review load grow linearly.</p>
+  </section>
+
+  <section class="method-section">
+    <div class="method-section-head"><span class="method-index">03</span><h2>Four rules enforced for you</h2></div>
+    <div class="method-rules">
+      <article class="method-rule"><span class="method-rule-num">01 / BACKLOG</span><h3>New problems pause at ${NEW_GATE} due reviews.</h3><p>Adding material on top of an overdue pile compounds it. The queue reopens automatically after you catch up.</p></article>
+      <article class="method-rule"><span class="method-rule-num">02 / INTERLEAVE</span><h3>New problems do not arrive in list order.</h3><p>Once ${INTERLEAVE_AFTER}+ patterns are in play, consecutive additions come from different categories so the strategy is not pre-announced.</p></article>
+      <article class="method-rule"><span class="method-rule-num">03 / FIRST CONTACT</span><h3>The first problem in a pattern starts with an example.</h3><p>Worked examples beat unguided struggle for genuine novices. After first contact, the support falls away and retrieval becomes the point.</p></article>
+      <article class="method-rule"><span class="method-rule-num">04 / LEECHES</span><h3>Repeated failures leave the normal queue.</h3><p>Two non-cold results in three attempts asks you to re-derive the insight before coding. Two clean solves return the problem to rotation.</p></article>
+    </div>
+  </section>
+
+  <section class="method-section">
+    <div class="method-section-head"><span class="method-index">04</span><h2>Transfer is the real test</h2></div>
+    <div class="method-callout"><h3>Same pattern. No warning. Blank editor.</h3><p>After two cold solves, another rep may only prove that you remember that problem. Interval can offer an unseen sibling from the same pattern instead. Solving it cold is stronger evidence, so it advances both schedules.</p></div>
+  </section>
+
+  <section class="method-section">
+    <div class="method-section-head"><span class="method-index">05</span><h2>Three learning objects, three tempos</h2></div>
+    <p>A 30-minute problem, a five-second fact and a 10-minute implementation form should not share one schedule. Each track uses spacing that matches the cost of its rep.</p>
+    <div class="method-tempos">
+      <div class="method-tempo"><span>Problems</span><strong>30 minutes</strong><small>Recognition and transfer</small></div>
+      <div class="method-tempo"><span>Recall</span><strong>5 seconds</strong><small>Atomic productions</small></div>
+      <div class="method-tempo"><span>Katas</span><strong>10–20 minutes</strong><small>Implementation forms</small></div>
+    </div>
+
+    <div class="method-track">
+      <div class="method-track-label"><span>Track 01</span><h3>Recall</h3></div>
+      <div class="method-track-body">
+        <p><strong>Five-second facts get the long memory curve.</strong> Recall begins at 2 days and can stretch to a year. JavaScript, TypeScript and SQL cards run in the browser; concept cards still require you to say the answer before revealing it.</p>
+        <p><strong>You type the answer, you don't flip a card.</strong> <a href="https://doi.org/10.3758/s13421-012-0245-x" target="_blank" rel="noopener">Overt retrieval</a> beats thinking “yeah, I know this”—the exact gap created when reading AI output feels like fluency.</p>
+        <p><strong>Capture beats curation.</strong> Log what you had to look up while solving, then author the answer later. A leech usually means the card should be split under <a href="https://super-memory.com/articles/20rules.htm" target="_blank" rel="noopener">the minimum information principle</a>.</p>
+      </div>
+    </div>
+
+    <div class="method-track">
+      <div class="method-track-label"><span>Track 02</span><h3>Katas</h3></div>
+      <div class="method-track-body">
+        <p><strong>A kata is a form repeated until its movements stop being decisions.</strong> Here, each form is a 10–20 minute data-structure implementation performed from memory.</p>
+        <p><strong>The lineage runs through kata-machine.</strong> The 23 forms are inspired by <a href="https://github.com/ThePrimeagen/kata-machine" target="_blank" rel="noopener">ThePrimeagen's kata-machine</a>, scheduled here, and executed in your clone of <a href="https://github.com/atarantino/kata-typescript" target="_blank" rel="noopener">kata-typescript</a>. <code>npm run due</code> scaffolds only what is decaying.</p>
+        <p><strong>Weekly until boring, then monthly.</strong> A successful interval has a 7-day floor and 180-day cap. Grade hesitation, not wall-clock time. A leech means rebuilding the mental model before another full implementation.</p>
+      </div>
+    </div>
+
+    <div class="method-loop"><h3>A sane daily loop</h3><p>Leeches first, then reviews, then whatever new problems the gate allows. Cap the session at about an hour. Give a new problem 30–45 minutes before escalating through hints, then re-solve it the next day—turning recognition into generation.</p></div>
+
+    <details class="refs">
+      <summary>Research references</summary><div>
     Cepeda, Pashler, Vul, Wixted &amp; Rohrer (2006), <a href="https://doi.org/10.1037/0033-2909.132.3.354" target="_blank" rel="noopener"><em>Distributed practice in verbal recall tasks</em></a>, Psych. Bulletin ·
     Cepeda et al. (2008), <a href="https://doi.org/10.1111/j.1467-9280.2008.02209.x" target="_blank" rel="noopener"><em>Spacing effects in learning: a temporal ridgeline of optimal retention</em></a>, Psych. Science ·
     Roediger &amp; Karpicke (2006), <a href="https://doi.org/10.1111/j.1467-9280.2006.01693.x" target="_blank" rel="noopener"><em>Test-enhanced learning</em></a>, Psych. Science ·
@@ -1874,7 +1982,10 @@ function renderAbout(){
     Overt vs. covert retrieval: Putnam &amp; Roediger (2013), <a href="https://doi.org/10.3758/s13421-012-0245-x" target="_blank" rel="noopener"><em>Does response mode affect amount recalled or the magnitude of the testing effect?</em></a>, Memory &amp; Cognition ·
     Sweller, van Merriënboer &amp; Paas (1998), <a href="https://doi.org/10.1023/A:1022193728205" target="_blank" rel="noopener"><em>Cognitive architecture and instructional design</em></a> — worked-example effect &amp; expertise reversal ·
     SM-2: <a href="https://super-memory.com/english/ol/sm2.htm" target="_blank" rel="noopener">Wozniak (1990), SuperMemo</a> · leech handling and backlog policy after the <a href="https://docs.ankiweb.net/leeches.html" target="_blank" rel="noopener">Anki manual</a>.
-  </div></div>`;
+      </div>
+    </details>
+  </section>
+  </article>`;
 }
 
 function paintBrand(){
@@ -2290,19 +2401,7 @@ syncbar.addEventListener('click', e=>{
   }
 });
 
-/* export / import / theme */
-document.getElementById('exportBtn').addEventListener('click', ()=>{
-  const blob = new Blob([JSON.stringify(state,null,2)],{type:'application/json'});
-  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
-  a.download=`interval-${todayStr()}.json`; a.click();
-});
-document.getElementById('importBtn').addEventListener('click', ()=>document.getElementById('importFile').click());
-document.getElementById('importFile').addEventListener('change', e=>{
-  const f=e.target.files[0]; if(!f) return;
-  const rd=new FileReader();
-  rd.onload=()=>{ try{ const d=JSON.parse(rd.result); if(!Array.isArray(d.log)) throw 0; state=migrate(d); save(); toast('Log imported'); render(); }catch(_){ toast('Not a valid backup file'); } };
-  rd.readAsText(f);
-});
+/* theme */
 document.getElementById('themeBtn').addEventListener('click', ()=>{
   const cur = localStorage.getItem('ncsr-theme') || (matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');
   const next = cur==='dark'?'light':'dark';

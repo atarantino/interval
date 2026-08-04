@@ -226,88 +226,69 @@ input[type=search]{flex:1; min-width:200px}
 .heat-legend{display:flex; align-items:center; gap:4px; font-size:11.5px; color:var(--ink-muted); margin-bottom:8px}
 .heat-legend .hcell{width:11px;height:11px}
 .sharebar{display:flex; justify-content:flex-end; gap:8px; margin:0 0 10px}
-/* Method — editorial notes inside the app's quiet, utilitarian shell */
-.method{max-width:760px; margin:0 auto; color:var(--ink-2)}
-.method-hero{padding:18px 0 30px; border-bottom:1px solid var(--grid)}
-.method-kicker{
-  margin:0 0 10px; color:var(--blue); font-size:11px; line-height:1.2; font-weight:750;
-  letter-spacing:.11em; text-transform:uppercase;
+/* Method — reference docs at the app's own scale: one reading column, the same
+   type and tables as the rest of the tabs, and one chart that draws the schedule
+   instead of describing it. */
+.method{max-width:680px; color:var(--ink-2)}
+.method-head{padding-bottom:16px; border-bottom:1px solid var(--grid)}
+.method h1{margin:0; color:var(--ink-1); font-size:20px; font-weight:650; letter-spacing:-0.015em}
+.method-lead{margin:7px 0 0; font-size:14.5px; line-height:1.6}
+.method section{margin-top:28px}
+.method h2{margin:0 0 12px; color:var(--ink-1); font-size:16px; font-weight:600}
+.method h3{margin:0 0 3px; color:var(--ink-1); font-size:14px; font-weight:650; line-height:1.4}
+.method p{margin:0 0 11px; font-size:14px; line-height:1.62}
+.method p:last-child{margin-bottom:0}
+.method code{
+  font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-size:12.5px;
+  background:var(--chip-bg); border-radius:5px; padding:1px 5px;
 }
-.method h1{
-  max-width:15ch; margin:0; color:var(--ink-1);
-  font-family:ui-serif,Georgia,Cambria,"Times New Roman",serif;
-  font-size:clamp(30px,5.5vw,46px); line-height:1.04; letter-spacing:-.035em;
+/* label, then explanation — the shape the tiles and result buttons already use */
+.method-defs{display:grid; gap:14px 26px}
+.method-defs.split{grid-template-columns:repeat(2,minmax(0,1fr))}
+.method-defs > div{padding-top:9px; border-top:1px solid var(--grid)}
+.method-defs p{margin:0; font-size:13.5px; line-height:1.58}
+.mtable + .method-defs{margin-top:20px}
+/* same table idiom as the all-problems list */
+.mtable{width:100%; border-collapse:collapse; font-size:13.5px}
+.mtable th{
+  padding:0 12px 6px 0; border-bottom:1px solid var(--grid); text-align:left;
+  color:var(--ink-muted); font-size:12px; font-weight:600;
 }
-.method-dek{max-width:62ch; margin:16px 0 0; font-size:16px; line-height:1.65; text-wrap:pretty}
-.method-note{
-  display:grid; grid-template-columns:112px 1fr; gap:18px; margin-top:18px; padding:14px 0 0;
-  border-top:1px dashed var(--grid); font-size:13px; line-height:1.6;
+.mtable td{padding:8px 12px 8px 0; border-bottom:1px solid var(--grid); vertical-align:top}
+.mtable th:last-child,.mtable td:last-child{padding-right:0}
+.mtable td:first-child{color:var(--ink-1); font-weight:600; white-space:nowrap}
+.mtable .num{font-variant-numeric:tabular-nums; white-space:nowrap}
+.mnote{margin-top:12px; font-size:13px; color:var(--ink-muted)}
+.mnote strong{color:var(--ink-2)}
+/* The ladder a cold-solved problem actually walks, plotted on a real calendar so
+   the expanding gap is visible rather than asserted. Values come from schedule(). */
+.ladder{margin-top:20px}
+.ladder-cap{margin:0; color:var(--ink-muted); font-size:12.5px}
+.ladder-track{position:relative; height:56px; margin:0 34px}
+.ladder-track::before{content:''; position:absolute; left:0; right:0; top:28px; height:1px; background:var(--grid)}
+.ladder-mark{position:absolute; top:14px; height:22px; border-left:1px dashed var(--baseline)}
+.ladder-mark span{position:absolute; bottom:21px; left:-1px; white-space:nowrap; color:var(--ink-muted); font-size:11px}
+.ladder-step{position:absolute; top:23px; transform:translateX(-50%); text-align:center}
+.ladder-step i{display:block; width:11px; height:11px; border-radius:50%}
+.ladder-step b{
+  display:block; margin-top:7px; color:var(--ink-1); font-size:12px; font-weight:650;
+  font-variant-numeric:tabular-nums;
 }
-.method-note strong{color:var(--ink-1)}
-.method-note-label{color:var(--ink-muted); font-size:11px; font-weight:750; letter-spacing:.08em; text-transform:uppercase}
-.method-section{margin-top:48px}
-.method-section-head{display:grid; grid-template-columns:34px 1fr; gap:12px; align-items:baseline; margin-bottom:18px}
-.method-index{
-  color:var(--blue); font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
-  font-size:11px; font-weight:700;
-}
-.method h2{
-  margin:0; color:var(--ink-1); font-family:ui-serif,Georgia,Cambria,"Times New Roman",serif;
-  font-size:25px; line-height:1.15; letter-spacing:-.02em;
-}
-.method h3{margin:0; color:var(--ink-1); font-size:14px; line-height:1.4}
-.method p{margin:0 0 12px}
-.method-grid{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:22px 28px}
-.method-point{padding-top:12px; border-top:2px solid var(--grid); font-size:13.5px; line-height:1.62}
-.method-point strong{display:block; margin-bottom:4px; color:var(--ink-1); font-size:14px}
-.method-schedule{
-  overflow:hidden; border:1px solid var(--ring); border-radius:12px; background:var(--surface-1);
-}
-.method-schedule-intro{padding:14px 16px 0; font-size:13.5px}
-.sched-scroll{overflow-x:auto}
-.sched-table{width:100%; border-collapse:collapse; font-size:13px}
-.sched-table td,.sched-table th{padding:10px 16px; text-align:left; border-top:1px solid var(--grid)}
-.sched-table th{color:var(--ink-muted); background:var(--chip-bg); font-size:10.5px; letter-spacing:.07em; text-transform:uppercase}
-.sched-table td:first-child{color:var(--ink-1); font-weight:650; white-space:nowrap}
-.method-after{margin-top:14px; font-size:13.5px; line-height:1.65}
-.method-rules{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px}
-.method-rule{min-height:100%; padding:16px; border:1px solid var(--ring); border-radius:11px; background:var(--surface-1)}
-.method-rule-num{
-  display:block; margin-bottom:16px; color:var(--blue); font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
-  font-size:11px; font-weight:700;
-}
-.method-rule h3{margin-bottom:6px}
-.method-rule p{font-size:13px; line-height:1.58}
-.method-callout{padding:18px 20px; border-left:3px solid var(--blue); border-radius:0 10px 10px 0; background:var(--chip-bg)}
-.method-callout h3{margin-bottom:7px}
-.method-callout p{font-size:13.5px; line-height:1.65}
-.method-tempos{display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); margin:18px 0 30px; border-block:1px solid var(--grid)}
-.method-tempo{padding:16px 14px; border-right:1px solid var(--grid)}
-.method-tempo:first-child{padding-left:0}.method-tempo:last-child{padding-right:0; border-right:0}
-.method-tempo span{display:block; color:var(--blue); font-size:11px; font-weight:750; letter-spacing:.07em; text-transform:uppercase}
-.method-tempo strong{display:block; margin-top:4px; color:var(--ink-1); font-family:ui-serif,Georgia,Cambria,"Times New Roman",serif; font-size:18px}
-.method-tempo small{display:block; margin-top:2px; color:var(--ink-muted); font-size:11.5px}
-.method-track{display:grid; grid-template-columns:170px 1fr; gap:28px; padding:24px 0; border-top:1px solid var(--grid)}
-.method-track:last-of-type{border-bottom:1px solid var(--grid)}
-.method-track-label span{display:block; margin-bottom:5px; color:var(--blue); font-size:10.5px; font-weight:750; letter-spacing:.08em; text-transform:uppercase}
-.method-track-label h3{font-family:ui-serif,Georgia,Cambria,"Times New Roman",serif; font-size:20px; letter-spacing:-.015em}
-.method-track-body{font-size:13.5px; line-height:1.65}
-.method-loop{margin-top:34px; padding:20px; border:1px dashed var(--baseline); border-radius:12px}
-.method-loop h3{margin-bottom:7px}
-.method-loop p{font-size:13.5px; line-height:1.65}
-.method .refs{margin-top:24px; padding-top:14px; border-top:1px solid var(--grid); color:var(--ink-muted); font-size:12px}
-.method .refs summary{width:max-content; cursor:pointer; color:var(--ink-2); font-weight:650}
-.method .refs div{margin-top:12px; line-height:1.65}
-@media (max-width:640px){
-  .method{max-width:none}
-  .method-hero{padding-top:8px}
-  .method-note,.method-track{grid-template-columns:1fr; gap:7px}
-  .method-grid,.method-rules{grid-template-columns:1fr}
-  .method-tempos{grid-template-columns:1fr}
-  .method-tempo,.method-tempo:first-child,.method-tempo:last-child{padding:12px 0; border-right:0; border-bottom:1px solid var(--grid)}
-  .method-tempo:last-child{border-bottom:0}
-  .method-section{margin-top:40px}
-  .sched-table{min-width:590px}
+.ladder-text{display:none; margin:8px 0 0; color:var(--ink-2); font-size:13.5px; font-variant-numeric:tabular-nums}
+/* Transfer reuses the in-app callout, so the page looks like the feature it explains */
+.method .transfer{margin:0; padding:12px 14px}
+.method .transfer h3{margin-bottom:4px}
+.method .transfer p{font-size:13.5px}
+.method-foot{margin-top:28px; padding-top:14px; border-top:1px solid var(--grid)}
+.method-foot p{margin:0; color:var(--ink-muted); font-size:12.5px; line-height:1.6}
+.method-foot a{color:var(--ink-2)}
+.method-foot .refs{margin-top:12px; color:var(--ink-muted); font-size:12px}
+.method-foot summary{width:max-content; cursor:pointer; color:var(--ink-2); font-weight:600}
+.method-foot .refs div{margin-top:10px; line-height:1.65}
+@media (max-width:600px){
+  .method-defs.split{grid-template-columns:1fr}
+  .ladder-track{display:none}
+  .ladder-text{display:block}
 }
 /* leeches */
 .card.leech{border-color:var(--serious); background:linear-gradient(0deg,var(--surface-1),var(--surface-1))}
@@ -889,6 +870,18 @@ function previewNext(st, r){
   if(r==='cold') return st.n===0||interval===0 ? 7 : Math.min(120, Math.max(7, Math.round(interval*ease)));
   if(r==='hints') return 2;
   return 1;
+}
+/* Gaps a problem walks through when it's solved cold every time. Folded through
+   previewNext so the Method chart can't drift from the real scheduler. */
+function coldLadder(steps){
+  let st = {n:0, ease:2.5, interval:0};
+  const gaps = [];
+  for(let i=0;i<steps;i++){
+    const interval = previewNext(st, 'cold');
+    gaps.push(interval);
+    st = {n: st.n+1, ease: Math.min(2.8, st.ease+0.05), interval};
+  }
+  return gaps;
 }
 function attemptsFor(pid){ return state.log.filter(a=>a.pid===pid).sort((a,b)=>a.d<b.d?-1:1); }
 function pstate(p){
@@ -1886,90 +1879,100 @@ function renderStats(){
 function renderAbout(){
   const info=TIER_INFO[state.tier];
   const listUrl=`https://neetcode.io/practice/practice/${info.list}`;
+  const gaps = coldLadder(4);
+  const days = gaps.reduce((acc,g)=>[...acc, (acc[acc.length-1]||0)+g], []);
+  const span = days[days.length-1];
+  const SOLID_AT = 30;
+  const ramp = ['--seq-200','--seq-350','--seq-500','--seq-650'];
+  const rungs = gaps.map((g,i)=>
+    `<span class="ladder-step" style="left:${(days[i]/span*100).toFixed(2)}%"><i style="background:var(${ramp[i]||'--seq-650'})"></i><b>+${g}d</b></span>`
+  ).join('');
+
   return `<article class="method">
-  <header class="method-hero">
-    <p class="method-kicker">The system behind the queue</p>
-    <h1>Practice for the moment the pattern isn't named.</h1>
-    <p class="method-dek">Interval schedules when you should <em>re-solve</em> each problem in the
-      <a href="${listUrl}" target="_blank" rel="noopener">${info.label}</a>, using the spacing effect and testing effect to turn recognition into recall.</p>
-    <div class="method-note">
-      <span class="method-note-label">About the lists</span>
-      <div>Problem names, categories and links follow the lists curated by
-        <a href="https://neetcode.io/" target="_blank" rel="noopener">NeetCode / Navdeep Singh</a>.
-        Interval stores only that metadata and your own logs—never problem statements or solutions.
-        NeetCode's videos, courses and <a href="https://neetcode.io/pro" target="_blank" rel="noopener">Pro membership</a> support the original work.
-        This app is not affiliated with NeetCode or LeetCode.</div>
-    </div>
+  <header class="method-head">
+    <h1>Why a problem comes back when it does</h1>
+    <p class="method-lead">Interval decides when you re-solve each problem in the
+      <a href="${listUrl}" target="_blank" rel="noopener">${info.label}</a>. Every rule below exists to make a rep a real retrieval attempt instead of a warm re-read.</p>
   </header>
 
-  <section class="method-section">
-    <div class="method-section-head"><span class="method-index">01</span><h2>The research, briefly</h2></div>
-    <div class="method-grid">
-      <div class="method-point"><strong>Spacing beats cramming.</strong><p>Cepeda, Pashler &amp; colleagues found distributed practice reliably outperforms massed practice. The useful gap grows with the desired retention interval, so a problem returns right around when you would start to forget it.</p></div>
-      <div class="method-point"><strong>Retrieval is the workout.</strong><p>Testing yourself produces better long-term retention than re-reading. Interval asks you to re-solve from a blank editor and keeps old notes behind a click; recalling the approach is the rep.</p></div>
-      <div class="method-point"><strong>Difficulty is desirable.</strong><p>Bjork's work shows that effortful, slightly uncomfortable practice can feel worse while sticking better. Struggling for 20 minutes before cracking a problem is a feature.</p></div>
-      <div class="method-point"><strong>Interleaving trains discrimination.</strong><p>Mixing patterns removes the category hint and practices the skill interviews actually test: recognizing which strategy applies before anyone names it.</p></div>
+  <section>
+    <h2>The research, briefly</h2>
+    <div class="method-defs split">
+      <div><h3>Spacing beats cramming</h3><p>Distributed practice reliably outperforms massed practice, and the useful gap grows with how long you want to hold on to something. A problem returns right around when you'd start to forget it.</p></div>
+      <div><h3>Retrieval is the workout</h3><p>Testing yourself retains far better than re-reading. You re-solve from a blank editor, and your old notes stay behind a click, so recalling the approach is the rep.</p></div>
+      <div><h3>Difficulty is desirable</h3><p>Practice that feels harder often sticks better. Struggling for twenty minutes before a problem cracks is the point, not a sign you're behind.</p></div>
+      <div><h3>Interleaving trains discrimination</h3><p>Mixing patterns removes the category hint and rehearses what an interview actually tests: spotting which strategy applies before anyone names it.</p></div>
     </div>
   </section>
 
-  <section class="method-section">
-    <div class="method-section-head"><span class="method-index">02</span><h2>How scheduling works</h2></div>
-    <div class="method-schedule">
-      <p class="method-schedule-intro">Each problem carries an <em>ease factor</em> (starting at 2.5) and an <em>interval</em>. Your result sets the next review.</p>
-      <div class="sched-scroll"><table class="sched-table">
-        <tr><th>Result</th><th>Next review</th><th>Ease</th></tr>
-        <tr><td>⚡ Solved cold</td><td>First: 7 days. Then interval × ease, capped at 120 days.</td><td>+0.05</td></tr>
-        <tr><td>💡 Needed hints</td><td>2 days</td><td>−0.15</td></tr>
-        <tr><td>▶ Watched video</td><td>Tomorrow</td><td>−0.20</td></tr>
-      </table></div>
-    </div>
-    <p class="method-after">Problems you find hard come back more often; ones you own graduate to month-plus intervals. A problem becomes <strong>solid</strong> at 30 days. This adapts SM-2 to the cost of re-solving code problems without letting the review load grow linearly.</p>
-  </section>
-
-  <section class="method-section">
-    <div class="method-section-head"><span class="method-index">03</span><h2>Four rules enforced for you</h2></div>
-    <div class="method-rules">
-      <article class="method-rule"><span class="method-rule-num">01 / BACKLOG</span><h3>New problems pause at ${NEW_GATE} due reviews.</h3><p>Adding material on top of an overdue pile compounds it. The queue reopens automatically after you catch up.</p></article>
-      <article class="method-rule"><span class="method-rule-num">02 / INTERLEAVE</span><h3>New problems do not arrive in list order.</h3><p>Once ${INTERLEAVE_AFTER}+ patterns are in play, consecutive additions come from different categories so the strategy is not pre-announced.</p></article>
-      <article class="method-rule"><span class="method-rule-num">03 / FIRST CONTACT</span><h3>The first problem in a pattern starts with an example.</h3><p>Worked examples beat unguided struggle for genuine novices. After first contact, the support falls away and retrieval becomes the point.</p></article>
-      <article class="method-rule"><span class="method-rule-num">04 / LEECHES</span><h3>Repeated failures leave the normal queue.</h3><p>Two non-cold results in three attempts asks you to re-derive the insight before coding. Two clean solves return the problem to rotation.</p></article>
-    </div>
-  </section>
-
-  <section class="method-section">
-    <div class="method-section-head"><span class="method-index">04</span><h2>Transfer is the real test</h2></div>
-    <div class="method-callout"><h3>Same pattern. No warning. Blank editor.</h3><p>After two cold solves, another rep may only prove that you remember that problem. Interval can offer an unseen sibling from the same pattern instead. Solving it cold is stronger evidence, so it advances both schedules.</p></div>
-  </section>
-
-  <section class="method-section">
-    <div class="method-section-head"><span class="method-index">05</span><h2>Three learning objects, three tempos</h2></div>
-    <p>A 30-minute problem, a five-second fact and a 10-minute implementation form should not share one schedule. Each track uses spacing that matches the cost of its rep.</p>
-    <div class="method-tempos">
-      <div class="method-tempo"><span>Problems</span><strong>30 minutes</strong><small>Recognition and transfer</small></div>
-      <div class="method-tempo"><span>Recall</span><strong>5 seconds</strong><small>Atomic productions</small></div>
-      <div class="method-tempo"><span>Katas</span><strong>10–20 minutes</strong><small>Implementation forms</small></div>
-    </div>
-
-    <div class="method-track">
-      <div class="method-track-label"><span>Track 01</span><h3>Recall</h3></div>
-      <div class="method-track-body">
-        <p><strong>Five-second facts get the long memory curve.</strong> Recall begins at 2 days and can stretch to a year. JavaScript, TypeScript and SQL cards run in the browser; concept cards still require you to say the answer before revealing it.</p>
-        <p><strong>You type the answer, you don't flip a card.</strong> <a href="https://doi.org/10.3758/s13421-012-0245-x" target="_blank" rel="noopener">Overt retrieval</a> beats thinking “yeah, I know this”—the exact gap created when reading AI output feels like fluency.</p>
-        <p><strong>Capture beats curation.</strong> Log what you had to look up while solving, then author the answer later. A leech usually means the card should be split under <a href="https://super-memory.com/articles/20rules.htm" target="_blank" rel="noopener">the minimum information principle</a>.</p>
+  <section>
+    <h2>How scheduling works</h2>
+    <p>Every problem carries an interval and an ease factor that starts at 2.5. What you log sets the next review.</p>
+    <table class="mtable">
+      <thead><tr><th scope="col">What you logged</th><th scope="col">Next review</th><th scope="col">Ease</th></tr></thead>
+      <tbody>
+        <tr><td>⚡ Solved cold</td><td>7 days the first time, then interval × ease, capped at 120 days</td><td class="num">+0.05</td></tr>
+        <tr><td>💡 Needed hints</td><td>In 2 days</td><td class="num">−0.15</td></tr>
+        <tr><td>▶ Watched video</td><td>Tomorrow</td><td class="num">−0.20</td></tr>
+      </tbody>
+    </table>
+    <div class="ladder">
+      <p class="ladder-cap">Solve the same problem cold four times running and the waits fall like this:</p>
+      <div class="ladder-track" role="img" aria-label="Review gaps after consecutive cold solves: ${gaps.map(g=>g+' days').join(', then ')}. A problem counts as solid once its interval reaches ${SOLID_AT} days.">
+        <span class="ladder-mark" style="left:${(SOLID_AT/span*100).toFixed(2)}%"><span>solid ≥${SOLID_AT}d</span></span>
+        ${rungs}
       </div>
+      <p class="ladder-text">${gaps.map(g=>g+'d').join(' → ')}, where the cap holds.</p>
     </div>
+    <p class="mnote">Problems you find hard come back sooner; ones you own stretch to month-plus gaps and count as <strong>solid</strong> at ${SOLID_AT} days. It's SM-2 adapted to what re-solving code costs, so the daily load stops growing as the list does.</p>
+  </section>
 
-    <div class="method-track">
-      <div class="method-track-label"><span>Track 02</span><h3>Katas</h3></div>
-      <div class="method-track-body">
-        <p><strong>A kata is a form repeated until its movements stop being decisions.</strong> Here, each form is a 10–20 minute data-structure implementation performed from memory.</p>
-        <p><strong>The lineage runs through kata-machine.</strong> The 23 forms are inspired by <a href="https://github.com/ThePrimeagen/kata-machine" target="_blank" rel="noopener">ThePrimeagen's kata-machine</a>, scheduled here, and executed in your clone of <a href="https://github.com/atarantino/kata-typescript" target="_blank" rel="noopener">kata-typescript</a>. <code>npm run due</code> scaffolds only what is decaying.</p>
-        <p><strong>Weekly until boring, then monthly.</strong> A successful interval has a 7-day floor and 180-day cap. Grade hesitation, not wall-clock time. A leech means rebuilding the mental model before another full implementation.</p>
-      </div>
+  <section>
+    <h2>Rules the app enforces for you</h2>
+    <div class="method-defs">
+      <div><h3>New problems pause at ${NEW_GATE} due reviews</h3><p>Adding material on top of an overdue pile only grows the pile. The new queue reopens by itself once you've caught up.</p></div>
+      <div><h3>New problems don't arrive in list order</h3><p>Once ${INTERLEAVE_AFTER} patterns are in play, consecutive additions come from different categories, so the strategy is never announced in advance.</p></div>
+      <div><h3>The first problem in a pattern comes with a worked example</h3><p>Worked examples beat unguided struggle for a genuine novice. After that first contact the support drops away and retrieval takes over.</p></div>
+      <div><h3>Repeated failures leave the normal queue</h3><p>When 2 of the last 3 attempts needed help, the problem becomes a leech and asks you to re-derive the idea before coding. Two clean solves return it to rotation.</p></div>
     </div>
+  </section>
 
-    <div class="method-loop"><h3>A sane daily loop</h3><p>Leeches first, then reviews, then whatever new problems the gate allows. Cap the session at about an hour. Give a new problem 30–45 minutes before escalating through hints, then re-solve it the next day—turning recognition into generation.</p></div>
+  <section>
+    <h2>Transfer is the real test</h2>
+    <div class="transfer">
+      <h3>Same pattern, no warning, blank editor.</h3>
+      <p>Once you've solved a problem cold twice, another rep on it mostly proves you remember that problem. Interval can hand you an unseen sibling from the same pattern instead. Solving that one cold is stronger evidence, so it advances both schedules.</p>
+    </div>
+  </section>
 
+  <section>
+    <h2>Three kinds of rep, three cadences</h2>
+    <p>A thirty-minute problem, a five-second fact and a fifteen-minute implementation shouldn't share one schedule. Each track spaces its reps to match what a rep costs.</p>
+    <table class="mtable">
+      <thead><tr><th scope="col">Track</th><th scope="col">One rep</th><th scope="col">Interval range</th></tr></thead>
+      <tbody>
+        <tr><td>Problems</td><td>About 30 minutes</td><td class="num">7 – 120 days</td></tr>
+        <tr><td>Recall</td><td>About 5 seconds</td><td class="num">2 – 365 days</td></tr>
+        <tr><td>Katas</td><td>10 – 20 minutes</td><td class="num">7 – 180 days</td></tr>
+      </tbody>
+    </table>
+    <div class="method-defs">
+      <div><h3>Recall — you type the answer, you don't flip a card</h3><p><a href="https://doi.org/10.3758/s13421-012-0245-x" target="_blank" rel="noopener">Overt retrieval</a> beats deciding you already know it, which is the exact gap that reading AI output opens up. Capture what you had to look up mid-solve and write the answer later; a leech usually means the card should be split under <a href="https://super-memory.com/articles/20rules.htm" target="_blank" rel="noopener">the minimum information principle</a>.</p></div>
+      <div><h3>Katas — a form repeated until the movements stop being decisions</h3><p>The 23 forms are inspired by <a href="https://github.com/ThePrimeagen/kata-machine" target="_blank" rel="noopener">ThePrimeagen's kata-machine</a>, scheduled here and run in your clone of <a href="https://github.com/atarantino/kata-typescript" target="_blank" rel="noopener">kata-typescript</a>, where <code>npm run due</code> scaffolds only what's decaying. Grade hesitation, not the clock.</p></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>A sane daily loop</h2>
+    <p>Leeches first, then reviews, then whatever new problems the gate lets through. Cap the session around an hour. Give a new problem 30–45 minutes before you escalate to hints, then re-solve it the next day.</p>
+  </section>
+
+  <footer class="method-foot">
+    <p>Problem names, categories and links follow the lists curated by
+      <a href="https://neetcode.io/" target="_blank" rel="noopener">NeetCode / Navdeep Singh</a>.
+      Interval stores that metadata and your own log — never problem statements or solutions.
+      NeetCode's videos, courses and <a href="https://neetcode.io/pro" target="_blank" rel="noopener">Pro membership</a> support the original work.
+      Not affiliated with NeetCode or LeetCode.</p>
     <details class="refs">
       <summary>Research references</summary><div>
     Cepeda, Pashler, Vul, Wixted &amp; Rohrer (2006), <a href="https://doi.org/10.1037/0033-2909.132.3.354" target="_blank" rel="noopener"><em>Distributed practice in verbal recall tasks</em></a>, Psych. Bulletin ·
@@ -1984,7 +1987,7 @@ function renderAbout(){
     SM-2: <a href="https://super-memory.com/english/ol/sm2.htm" target="_blank" rel="noopener">Wozniak (1990), SuperMemo</a> · leech handling and backlog policy after the <a href="https://docs.ankiweb.net/leeches.html" target="_blank" rel="noopener">Anki manual</a>.
       </div>
     </details>
-  </section>
+  </footer>
   </article>`;
 }
 

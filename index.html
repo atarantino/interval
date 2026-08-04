@@ -66,6 +66,16 @@ header.site{
   border-radius:8px; padding:5px 10px; font-size:13px; cursor:pointer; font-family:inherit;
 }
 .iconbtn:hover{color:var(--ink-1)}
+/* Sync is the one header button that opens something rather than doing something,
+   so it carries a caret and holds a pressed state while its panel is open. */
+#syncBtn::after{
+  content:''; display:inline-block; margin-left:7px; vertical-align:2px; width:0; height:0;
+  border-top:4px solid currentColor; border-left:3.5px solid transparent; border-right:3.5px solid transparent;
+  transition:transform .15s ease;
+}
+#syncBtn[aria-expanded="true"]{background:var(--chip-bg); color:var(--ink-1); border-color:var(--baseline)}
+#syncBtn[aria-expanded="true"]::after{transform:rotate(180deg)}
+@media (prefers-reduced-motion:reduce){ #syncBtn::after{transition:none} }
 nav.tabs{
   display:flex; gap:2px; border-bottom:1px solid var(--grid); margin-bottom:20px; overflow-x:auto;
 }
@@ -250,9 +260,9 @@ input[type=search]{flex:1; min-width:200px}
 .syncbar{
   background:var(--surface-1); border:1px solid var(--ring); border-radius:12px;
   padding:14px 16px; margin-bottom:14px; font-size:13.5px; color:var(--ink-2);
-  display:grid; gap:14px;
+  display:grid; gap:12px;
 }
-.syncbar .srow{display:flex; gap:8px; align-items:center; flex-wrap:wrap}
+.syncbar .srow{display:flex; gap:8px; align-items:center; flex-wrap:wrap; width:100%}
 .syncbar input[type=text]{
   flex:1; min-width:120px; font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-size:12px;
   color:var(--ink-2); background:var(--page); border:1px solid var(--ring); border-radius:8px; padding:7px 10px;
@@ -267,11 +277,17 @@ input[type=search]{flex:1; min-width:200px}
 .sync-dot.pending{background:var(--warning)}
 .sync-dot.error{background:var(--critical)}
 .sync-stamp{color:var(--ink-muted); font-variant-numeric:tabular-nums}
-.sync-sec, .sync-foot{padding-top:14px; border-top:1px solid var(--grid)}
-.sync-sec{display:grid; gap:8px; justify-items:start}
-.sync-foot{display:flex; align-items:baseline; gap:8px; flex-wrap:wrap}
-.sync-label{font-size:11px; font-weight:700; letter-spacing:.07em; text-transform:uppercase; color:var(--ink-muted)}
-.sync-note{margin:0; font-size:12.5px; color:var(--ink-muted); max-width:62ch}
+/* Exactly two rules: one under the status line, one above the footer. Everything
+   between them is one block, so the panel reads as a panel and not as a stack of
+   little cards each demanding its own attention. */
+.sync-body, .sync-foot{padding-top:12px; border-top:1px solid var(--grid)}
+.sync-body{display:grid; gap:12px; justify-items:start}
+.sync-foot{display:grid; gap:5px}
+/* No measure cap here: the panel is already width-capped, and these are one-line
+   captions under a control, not running prose. Capping them wraps a short sentence
+   at half the available width, which reads as truncation rather than as a column. */
+.sync-note{margin:0; font-size:12.5px; color:var(--ink-muted); text-wrap:pretty}
+.sync-note a{white-space:nowrap}
 .sync-line{display:flex; align-items:center; gap:10px; flex-wrap:wrap}
 /* Recessed rather than red: rotation is a considered action, not an alarm, and the
    consequence lives in the copy where it can be read. */
@@ -282,13 +298,32 @@ input[type=search]{flex:1; min-width:200px}
 .sync-confirm .sync-note{max-width:58ch}
 .sync-confirm strong{color:var(--ink-1)}
 .sync-line .who{color:var(--ink-1); font-weight:600}
-.syncbar .srow{width:100%}
-.syncbar .kofi-nudge{margin-top:0; padding-top:14px; border-top:1px solid var(--grid); font-size:12.5px; color:var(--ink-muted)}
+.sync-opt{display:grid; gap:7px; justify-items:start}
+/* The pairing link is the fallback route once an account can recover the log, so it
+   folds away rather than sitting open as the panel's largest widget. */
+.sync-more{width:100%}
+/* Shaped like a control, not a caption: a caret, a real hit area, and a chip that
+   stays lit while open, so it's clear this is the thing that hides the link again. */
+.sync-more>summary{
+  list-style:none; width:max-content; cursor:pointer; display:inline-flex; align-items:center;
+  gap:8px; font-size:13px; font-weight:600; color:var(--ink-2);
+  padding:5px 11px 5px 9px; border:1px solid var(--ring); border-radius:8px;
+}
+.sync-more>summary::-webkit-details-marker{display:none}
+.sync-more>summary::before{
+  content:''; flex:none; width:0; height:0; border-left:4.5px solid currentColor;
+  border-top:4px solid transparent; border-bottom:4px solid transparent; transition:transform .15s ease;
+}
+.sync-more[open]>summary::before{transform:rotate(90deg)}
+.sync-more>summary:hover{color:var(--ink-1); border-color:var(--baseline)}
+.sync-more[open]>summary{color:var(--ink-1); background:var(--chip-bg); border-color:var(--baseline)}
+.sync-more .sync-drawer{display:grid; gap:8px; padding-top:10px}
+@media (prefers-reduced-motion:reduce){ .sync-more>summary::before{transition:none} }
 .syncbar .ghost{
   padding:0; text-decoration:underline; text-underline-offset:3px; text-decoration-color:var(--grid);
 }
 .syncbar .ghost:hover{text-decoration-color:currentColor}
-.syncbar :is(button,input,a):focus-visible{outline:2px solid var(--blue); outline-offset:2px; border-radius:6px}
+.syncbar :is(button,input,a,summary):focus-visible{outline:2px solid var(--blue); outline-offset:2px; border-radius:6px}
 /* ---- recall + katas ---- */
 .kata .prob-head{cursor:pointer}
 .kq{font-weight:600; font-size:15px}
@@ -2107,61 +2142,19 @@ function paintSyncbar(){
   const showGoogle = googleConfigured();
   const email = googleEmail();
   const head = `<div class="sync-head" id="syncHead">${syncHeadHTML()}</div>`;
-  if(!key){
-    syncbar.innerHTML = head + (showGoogle
-      ? `<div class="sync-sec">
-           <div class="sync-label">Recommended</div>
-           <div data-google-signin="primary"></div>
-           <p class="sync-note">Turns sync on and ties this log to your Google account. Sign in on another computer — or on this one after clearing your browser — and the log comes back. Nothing to keep track of.</p>
-         </div>
-         <div class="sync-sec">
-           <div class="sync-label">Without an account</div>
-           <button class="ghost" data-syncon>Use a pairing link instead</button>
-           <p class="sync-note">You get one secret link to open on your other devices. Anyone holding it has your log, and if you lose it there's no way back in.</p>
-         </div>`
-      : `<div class="sync-sec">
-           <button class="primary" data-syncon>Turn on sync</button>
-           <p class="sync-note">You get one secret link to open on your other devices, and the merged log is stored against it. Anyone holding the link has your log, and if you lose it there's no way back in.</p>
-         </div>`);
-  } else if(syncState==='revoked'){
-    // The link in localStorage is dead, so showing it — or any action that implies
-    // it still works — would be a lie. Offer only the two real ways back.
-    syncbar.innerHTML = head + `
-      <div class="sync-sec">
-        <div class="sync-label">Reconnect</div>
-        ${showGoogle
-          ? `<div data-google-signin="primary"></div>
-             <p class="sync-note">Signing in picks up the current link for your account and pushes this device's log into it.</p>`
-          : `<p class="sync-note">Open the current pairing link on this device to reconnect.</p>`}
-        <p class="sync-note">Or open the new pairing link here, from a device that already has it.</p>
-      </div>
-      <div class="sync-foot">
-        <button class="ghost" data-syncoff>Turn off sync on this device</button>
-        <span class="sync-note">Nothing logged in this browser has been lost — it is still here, just not syncing.</span>
-      </div>`;
-  } else {
-    const link = pairLink();
-    syncbar.innerHTML = head + `
-      ${showGoogle ? (email
-        ? `<div class="sync-sec">
-             <div class="sync-label">Account</div>
-             <div class="sync-line"><span class="who">${esc(email)}</span><button class="ghost" data-google-signout>Sign out here</button></div>
-             <p class="sync-note">Sign in with this account on any other device to pick up the same log — no link needed.</p>
-           </div>`
-        : `<div class="sync-sec">
-             <div class="sync-label">Account</div>
-             <div data-google-signin="secondary"></div>
-             <p class="sync-note">The link below is currently the only way back into this log. Sign in and your Google account can recover it instead.</p>
-           </div>`) : ''}
-      <div class="sync-sec">
-        <div class="sync-label">Pairing link</div>
+  // The link is only worth folding away when something else can get you back into
+  // the log; when it's the sole way in it stays open, whatever else is on screen.
+  const linkBlock = (open, note) => `
+    <details class="sync-more"${open?' open':''}>
+      <summary>Pairing link</summary>
+      <div class="sync-drawer">
         <div class="srow">
           <input type="text" readonly id="pairLink" aria-label="Pairing link"
-                 data-link="${esc(link)}" value="${esc(pairLinkShown ? link : maskLink(link))}">
+                 data-link="${esc(pairLink())}" value="${esc(pairLinkShown ? pairLink() : maskLink(pairLink()))}">
           <button class="iconbtn" data-syncreveal>${pairLinkShown?'Hide':'Show'}</button>
           <button class="iconbtn" data-synccopy>Copy</button>
         </div>
-        <p class="sync-note">Open it once on another device and the two logs merge: attempts union, deletions stick, newest deck edit wins. Treat it like a password.</p>
+        <p class="sync-note">${note}</p>
         ${rotateArmed
           ? `<div class="sync-confirm">
                <p class="sync-note"><strong>Rotate this link?</strong> The current one stops working everywhere, immediately. ${email
@@ -2175,11 +2168,60 @@ function paintSyncbar(){
              </div>`
           : `<button class="ghost" data-rotate>Rotate this link</button>`}
       </div>
-      <div class="sync-foot">
-        <button class="ghost" data-syncoff>Turn off sync on this device</button>
-        <span class="sync-note">${email?'Signs you out here too. ':''}Everything already logged in this browser stays.</span>
+    </details>`;
+  if(!key){
+    syncbar.innerHTML = head + `<div class="sync-body">` + (showGoogle
+      ? `<div class="sync-opt">
+           <div data-google-signin="primary"></div>
+           <p class="sync-note">Turns sync on and ties this log to your Google account. Sign in anywhere else — another computer, or this one after you clear your browser — and the log comes back.</p>
+         </div>
+         <div class="sync-opt">
+           <button class="ghost" data-syncon>Use a pairing link instead</button>
+           <p class="sync-note">One secret link, no account. Anyone holding it has your log, and losing it locks you out for good.</p>
+         </div>`
+      : `<div class="sync-opt">
+           <button class="primary" data-syncon>Turn on sync</button>
+           <p class="sync-note">You get one secret link to open on your other devices, and the merged log is stored against it. Anyone holding the link has your log, and losing it locks you out for good.</p>
+         </div>`) + `</div>`;
+  } else if(syncState==='revoked'){
+    // The stored link is dead. Keep it hidden and offer only the real ways back.
+    syncbar.innerHTML = head + `<div class="sync-body">
+      <div class="sync-opt">
+        ${showGoogle
+          ? `<div data-google-signin="primary"></div>
+             <p class="sync-note">Sign in to pick up the current link for your account and carry this browser's log into it.</p>`
+          : `<p class="sync-note">Open the current pairing link on this device to reconnect.</p>`}
+        <p class="sync-note">You can also open the new pairing link here from a device that already has it.</p>
       </div>
-      <span class="kofi-nudge">Sync runs on a small backend I pay for out of pocket — if it earns its keep, <a href="https://ko-fi.com/adamtarantino" target="_blank" rel="noopener">buy me a coffee ☕</a></span>`;
+    </div>
+    <div class="sync-foot">
+      <div class="sync-line">
+        <button class="ghost" data-syncoff>Turn off sync on this device</button>
+        <span class="sync-note">Nothing logged here has been lost — it is still in this browser.</span>
+      </div>
+    </div>`;
+  } else {
+    syncbar.innerHTML = head + `<div class="sync-body">
+      ${showGoogle ? (email
+        ? `<div class="sync-opt">
+             <div class="sync-line"><span class="who">${esc(email)}</span><button class="ghost" data-google-signout>Sign out here</button></div>
+             <p class="sync-note">Sign in with this account on any other device to pick up the same log.</p>
+           </div>
+           ${linkBlock(false, 'For a device you\'d rather not sign in on. Open it once there and the two logs merge. Treat it like a password.')}`
+        : `<div class="sync-opt">
+             <div data-google-signin="secondary"></div>
+             <p class="sync-note">Right now the pairing link is the only way back into this log. Sign in and your Google account can recover it instead.</p>
+           </div>
+           ${linkBlock(true, 'Open it once on another device and the two logs merge. Treat it like a password.')}`)
+        : linkBlock(true, 'Open it once on another device and the two logs merge. Treat it like a password.')}
+    </div>
+    <div class="sync-foot">
+      <div class="sync-line">
+        <button class="ghost" data-syncoff>Turn off sync on this device</button>
+        <span class="sync-note">${email?'Signs you out here too. ':''}Everything already logged here stays.</span>
+      </div>
+      <p class="sync-note">Sync runs on a small backend I pay for — if it earns its keep, <a href="https://ko-fi.com/adamtarantino" target="_blank" rel="noopener">buy me a coffee ☕</a></p>
+    </div>`;
   }
   renderGoogleSignInButton();
 }

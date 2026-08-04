@@ -249,38 +249,15 @@ input[type=search]{flex:1; min-width:200px}
 /* sync */
 .syncbar{
   background:var(--surface-1); border:1px solid var(--ring); border-radius:12px;
-  padding:14px 16px; margin-bottom:14px; font-size:13.5px; color:var(--ink-2);
-  display:grid; gap:14px;
+  padding:12px 16px; margin-bottom:14px; font-size:13.5px; color:var(--ink-2);
 }
-.syncbar .srow{display:flex; gap:8px; align-items:center; flex-wrap:wrap}
+.syncbar .srow{display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-top:8px}
 .syncbar input[type=text]{
-  flex:1; min-width:120px; font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-size:12px;
+  flex:1; min-width:200px; font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-size:12px;
   color:var(--ink-2); background:var(--page); border:1px solid var(--ring); border-radius:8px; padding:7px 10px;
 }
 .syncbar strong{color:var(--ink-1)}
-/* Status reads as state before it reads as text: a dot carries on/pending/failed
-   so you can tell at a glance without parsing the sentence. */
-.sync-head{display:flex; align-items:center; gap:8px; flex-wrap:wrap}
-.sync-head .spacer{flex:1; min-width:0}
-.sync-dot{width:8px; height:8px; border-radius:50%; flex:none; background:var(--baseline)}
-.sync-dot.on{background:var(--good)}
-.sync-dot.pending{background:var(--warning)}
-.sync-dot.error{background:var(--critical)}
-.sync-stamp{color:var(--ink-muted); font-variant-numeric:tabular-nums}
-.sync-sec, .sync-foot{padding-top:14px; border-top:1px solid var(--grid)}
-.sync-sec{display:grid; gap:8px; justify-items:start}
-.sync-foot{display:flex; align-items:baseline; gap:8px; flex-wrap:wrap}
-.sync-label{font-size:11px; font-weight:700; letter-spacing:.07em; text-transform:uppercase; color:var(--ink-muted)}
-.sync-note{margin:0; font-size:12.5px; color:var(--ink-muted); max-width:62ch}
-.sync-line{display:flex; align-items:center; gap:10px; flex-wrap:wrap}
-.sync-line .who{color:var(--ink-1); font-weight:600}
-.syncbar .srow{width:100%}
-.syncbar .kofi-nudge{margin-top:0; padding-top:14px; border-top:1px solid var(--grid); font-size:12.5px; color:var(--ink-muted)}
-.syncbar .ghost{
-  padding:0; text-decoration:underline; text-underline-offset:3px; text-decoration-color:var(--grid);
-}
-.syncbar .ghost:hover{text-decoration-color:currentColor}
-.syncbar :is(button,input,a):focus-visible{outline:2px solid var(--blue); outline-offset:2px; border-radius:6px}
+.syncbar .signin-copy{margin-top:8px}
 /* ---- recall + katas ---- */
 .kata .prob-head{cursor:pointer}
 .kq{font-weight:600; font-size:15px}
@@ -355,13 +332,13 @@ input[type=search]{flex:1; min-width:200px}
     <div class="logo">Interval <span class="accent">· <span id="listLogo">NeetCode 150</span></span></div>
     <div class="spacer"></div>
     <span class="streak-chip" id="streakChip" title="Consecutive days with at least one logged attempt">🔥 <span id="streakVal">0</span>d</span>
-    <button class="iconbtn" id="syncBtn" title="Set up cross-device sync" aria-expanded="false" aria-controls="syncbar">Sync</button>
+    <button class="iconbtn" id="syncBtn" title="Set up cross-device sync">Sync</button>
     <button class="iconbtn" id="themeBtn" title="Toggle light/dark">◐</button>
     <button class="iconbtn" id="exportBtn" title="Download your log as JSON">Export</button>
     <button class="iconbtn" id="importBtn" title="Restore a log from JSON">Import</button>
     <input type="file" id="importFile" accept=".json" style="display:none">
   </header>
-  <div id="syncbar" class="syncbar" role="region" aria-label="Cross-device sync" style="display:none"></div>
+  <div id="syncbar" class="syncbar" style="display:none"></div>
   <nav class="tabs" id="tabs">
     <button data-tab="today" class="active">Today <span class="cnt" id="dueCnt">0</span></button>
     <button data-tab="recall">Recall <span class="cnt" id="recallCnt">0</span></button>
@@ -602,10 +579,6 @@ function paintSync(){
   el.title = syncState==='off' ? 'Set up cross-device sync' :
     syncState==='ok' ? `Synced ${syncStamp?syncStamp.toLocaleTimeString():''}` :
     syncState==='dirty' ? 'Changes pending' : 'Sync failed — will retry on next change';
-  // Refresh only the status line, so an open panel tracks sync state live without
-  // tearing down the Google button iframe or resetting the revealed pairing link.
-  const head=document.getElementById('syncHead');
-  if(head) head.innerHTML = syncHeadHTML();
 }
 
 let googleIdentityPromise=null;
@@ -634,13 +607,10 @@ function loadGoogleIdentity(){
 function renderGoogleSignInButton(){
   const slot=syncbar.querySelector('[data-google-signin]');
   if(!slot) return;
-  // Filled when signing in is the recommended way to turn sync on, outlined when it's
-  // the recovery option offered alongside a link you already have.
-  const theme = slot.dataset.googleSignin==='secondary' ? 'outline' : 'filled_blue';
   loadGoogleIdentity().then(()=>{
     if(!slot.isConnected) return;
-    google.accounts.id.renderButton(slot, {type:'standard', theme, size:'large', shape:'rectangular', text:'signin_with', logo_alignment:'left'});
-  }).catch(()=>{ if(slot.isConnected) slot.textContent='Google sign-in is unavailable right now — the pairing link still works.'; });
+    google.accounts.id.renderButton(slot, {type:'standard', theme:'outline', size:'large', text:'signin_with'});
+  }).catch(()=>{ if(slot.isConnected) slot.textContent='Google sign-in is unavailable right now.'; });
 }
 function emailFromGoogleCredential(credential){
   try{
@@ -2010,130 +1980,49 @@ async function runKataFromUI(kid){
   }
 }
 
-/* ---- sync UI ----
-   Signing in and the pairing link are not two competing features: both turn sync on,
-   and both are just ways of getting the same 128-bit key onto a second device. The
-   panel says so — sign-in is the recommended door because the key is recoverable
-   behind it, the link is the no-account door with the loss risk stated plainly. */
+/* ---- sync UI ---- */
 const syncbar = document.getElementById('syncbar');
-let pairLinkShown = false;
-function pairLink(){
-  const key = syncKey();
-  return location.origin.startsWith('http')
-    ? `${location.origin}${location.pathname}#k=${key}`
-    : `https://intervalreps.vercel.app/#k=${key}`;
-}
-function maskLink(link){ return link.replace(/#k=.*$/, '#k=' + '•'.repeat(20)); }
-// The link is a bearer capability, so it stays masked until you ask for it — a
-// screenshot or a shoulder glance shouldn't be enough to hand over the log.
-function syncHeadHTML(){
-  if(!syncKey()){
-    return `<span class="sync-dot"></span><strong>Sync is off</strong>
-      <span class="sync-stamp">— this log lives only in this browser</span>`;
-  }
-  const dot = syncState==='ok' ? 'on' : syncState==='dirty' ? 'pending' : syncState==='error' ? 'error' : '';
-  const stamp =
-    syncState==='ok' ? (syncStamp ? `— last synced ${syncStamp.toLocaleTimeString([], {hour:'numeric', minute:'2-digit'})}` : '') :
-    syncState==='dirty' ? '— saving changes…' :
-    syncState==='error' ? '— last attempt failed, retrying on your next change' : '';
-  return `<span class="sync-dot ${dot}"></span><strong>Sync is on</strong>
-    <span class="sync-stamp">${stamp}</span>
-    <span class="spacer"></span><button class="iconbtn" data-syncnow>Sync now</button>`;
-}
 function paintSyncbar(){
   if(syncbar.style.display==='none') return;
   const key = syncKey();
   const showGoogle = googleConfigured();
   const email = googleEmail();
-  const head = `<div class="sync-head" id="syncHead">${syncHeadHTML()}</div>`;
   if(!key){
-    syncbar.innerHTML = head + (showGoogle
-      ? `<div class="sync-sec">
-           <div class="sync-label">Recommended</div>
-           <div data-google-signin="primary"></div>
-           <p class="sync-note">Turns sync on and ties this log to your Google account. Sign in on another computer — or on this one after clearing your browser — and the log comes back. Nothing to keep track of.</p>
-         </div>
-         <div class="sync-sec">
-           <div class="sync-label">Without an account</div>
-           <button class="ghost" data-syncon>Use a pairing link instead</button>
-           <p class="sync-note">You get one secret link to open on your other devices. Anyone holding it has your log, and if you lose it there's no way back in.</p>
-         </div>`
-      : `<div class="sync-sec">
-           <button class="primary" data-syncon>Turn on sync</button>
-           <p class="sync-note">You get one secret link to open on your other devices, and the merged log is stored against it. Anyone holding the link has your log, and if you lose it there's no way back in.</p>
-         </div>`);
+    syncbar.innerHTML = `<strong>Cross-device sync is off.</strong> Your log lives only in this browser.
+      Turning it on stores the merged log on your Convex backend, keyed by a random 128-bit link — anyone with the link has the data, so share it only with your own devices.
+      <div class="srow"><button class="primary" data-syncon>Turn on sync</button>${showGoogle?'<div data-google-signin></div>':''}</div>
+      ${showGoogle?'<div class="signin-copy">Signing in turns on sync and lets you get back to your log on any device — no pairing link needed.</div>':''}`;
   } else {
-    const link = pairLink();
-    syncbar.innerHTML = head + `
-      ${showGoogle ? (email
-        ? `<div class="sync-sec">
-             <div class="sync-label">Account</div>
-             <div class="sync-line"><span class="who">${esc(email)}</span><button class="ghost" data-google-signout>Sign out here</button></div>
-             <p class="sync-note">Sign in with this account on any other device to pick up the same log — no link needed.</p>
-           </div>`
-        : `<div class="sync-sec">
-             <div class="sync-label">Account</div>
-             <div data-google-signin="secondary"></div>
-             <p class="sync-note">The link below is currently the only way back into this log. Sign in and your Google account can recover it instead.</p>
-           </div>`) : ''}
-      <div class="sync-sec">
-        <div class="sync-label">Pairing link</div>
-        <div class="srow">
-          <input type="text" readonly id="pairLink" aria-label="Pairing link"
-                 data-link="${esc(link)}" value="${esc(pairLinkShown ? link : maskLink(link))}">
-          <button class="iconbtn" data-syncreveal>${pairLinkShown?'Hide':'Show'}</button>
-          <button class="iconbtn" data-synccopy>Copy</button>
-        </div>
-        <p class="sync-note">Open it once on another device and the two logs merge: attempts union, deletions stick, newest deck edit wins. Treat it like a password.</p>
-      </div>
-      <div class="sync-foot">
-        <button class="ghost" data-syncoff>Turn off sync on this device</button>
-        <span class="sync-note">${email?'Signs you out here too. ':''}Everything already logged in this browser stays.</span>
-      </div>
+    const link = location.origin.startsWith('http') ? `${location.origin}${location.pathname}#k=${key}` : `https://intervalreps.vercel.app/#k=${key}`;
+    syncbar.innerHTML = `<strong>Sync is on.</strong> Open this link once on another device and the two logs merge — attempts union, deletions stick, newest deck edit wins.
+      <div class="srow"><input type="text" readonly value="${esc(link)}" id="pairLink"><button class="iconbtn" data-synccopy>Copy</button></div>
+      <div class="srow"><button class="iconbtn" data-syncnow>Sync now</button><button class="ghost" data-syncoff>Turn off on this device (keeps local data)</button></div>
+      ${showGoogle ? email
+        ? `<div class="signin-copy">Signed in as ${esc(email)} — open Interval anywhere and sign in to pick up your log.</div>
+          <div class="srow"><button class="ghost" data-google-signout>Sign out of Google on this device (keeps local data and sync)</button></div>`
+        : `<div class="signin-copy">Sign in with Google so you can get back in without this link.</div>
+          <div class="srow"><div data-google-signin></div></div>` : ''}
       <span class="kofi-nudge">Sync runs on a small backend I pay for out of pocket — if it earns its keep, <a href="https://ko-fi.com/adamtarantino" target="_blank" rel="noopener">buy me a coffee ☕</a></span>`;
   }
   renderGoogleSignInButton();
 }
-document.getElementById('syncBtn').addEventListener('click', e=>{
-  const open = syncbar.style.display==='none';
-  syncbar.style.display = open ? '' : 'none';
-  e.currentTarget.setAttribute('aria-expanded', String(open));
-  pairLinkShown = false;
+document.getElementById('syncBtn').addEventListener('click', ()=>{
+  syncbar.style.display = syncbar.style.display==='none' ? '' : 'none';
   paintSyncbar();
 });
 syncbar.addEventListener('click', e=>{
   if(e.target.closest('[data-syncon]')){
-    // A fresh random key is nobody's account key, so any stale sign-in has to go with it.
     localStorage.removeItem(GOOGLE_EMAIL_LS);
     localStorage.setItem(SYNC_KEY_LS, newSyncKey());
-    pairLinkShown = false;
-    paintSyncbar(); syncNow(); toast('Sync on — copy the link and open it on your other device');
-  } else if(e.target.closest('[data-syncreveal]')){
-    const inp=document.getElementById('pairLink'), btn=e.target.closest('[data-syncreveal]');
-    pairLinkShown = !pairLinkShown;
-    inp.value = pairLinkShown ? inp.dataset.link : maskLink(inp.dataset.link);
-    btn.textContent = pairLinkShown ? 'Hide' : 'Show';
+    paintSyncbar(); syncNow(); toast('Sync on — open the link on your other device');
   } else if(e.target.closest('[data-synccopy]')){
-    // Copy the real link even while it's masked on screen.
-    const inp=document.getElementById('pairLink'), real=inp.dataset.link;
-    const fallback=()=>{
-      inp.value = real; inp.select(); document.execCommand('copy');
-      if(!pairLinkShown) inp.value = maskLink(real);
-      toast('Pairing link copied');
-    };
-    if(navigator.clipboard) navigator.clipboard.writeText(real).then(()=>toast('Pairing link copied'), fallback);
-    else fallback();
+    const inp=document.getElementById('pairLink'); inp.select();
+    navigator.clipboard?.writeText(inp.value).then(()=>toast('Pairing link copied'),()=>document.execCommand('copy'));
   } else if(e.target.closest('[data-syncnow]')){
     syncNow(); toast('Syncing…');
   } else if(e.target.closest('[data-syncoff]')){
-    // Staying "signed in" with sync off would be a state with no meaning — the account
-    // exists only to hand back a sync key — so the one switch turns off both.
-    const wasSignedIn = !!googleEmail();
-    localStorage.removeItem(SYNC_KEY_LS); syncState='off'; pairLinkShown=false;
-    if(wasSignedIn) signOutGoogle();
-    paintSync(); paintSyncbar();
-    toast(wasSignedIn ? 'Sync off and signed out — your log stays in this browser'
-                      : 'Sync off — your log stays in this browser');
+    localStorage.removeItem(SYNC_KEY_LS); syncState='off';
+    paintSync(); paintSyncbar(); toast('Sync off — local data untouched');
   } else if(e.target.closest('[data-google-signout]')){
     signOutGoogle();
   }

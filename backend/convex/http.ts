@@ -17,7 +17,10 @@ const CORS: Record<string, string> = {
 const RECOVER_ORIGINS = new Set([
   "https://intervalreps.vercel.app",
   "https://neetcode-spaced-reps.vercel.app",
+  // Local development. 8642 is the port in .claude/launch.json — keep these in step,
+  // or sign-in and rotation silently fail CORS on the dev server while working in prod.
   "http://localhost:8000",
+  "http://localhost:8642",
 ]);
 const GOOGLE_JWKS = createRemoteJWKSet(new URL("https://www.googleapis.com/oauth2/v3/certs"));
 
@@ -67,7 +70,17 @@ http.route({
     if (JSON.stringify(state).length > 900_000) {
       return new Response(JSON.stringify({ error: "state too large" }), { status: 413, headers: CORS });
     }
-    const merged = await ctx.runMutation(api.sync.push, { key, state });
+    let merged: any;
+    try {
+      merged = await ctx.runMutation(api.sync.push, { key, state });
+    } catch (err: any) {
+      // 410 rather than 4xx-generic: the client uses it to tell "this key is dead,
+      // stop retrying and tell the user" apart from an ordinary transient failure.
+      if (err?.data?.code === "revoked") {
+        return new Response(JSON.stringify({ error: "revoked" }), { status: 410, headers: CORS });
+      }
+      throw err;
+    }
     return new Response(JSON.stringify({ state: merged }), {
       headers: { ...CORS, "Content-Type": "application/json" },
     });
@@ -115,6 +128,72 @@ http.route({
 
     const recoveredKey = await ctx.runMutation(internal.recover.getOrCreate, { subject, key });
     return recoverJson(req, { key: recoveredKey });
+  }),
+});
+
+http.route({
+  path: "/rotate",
+  method: "OPTIONS",
+  handler: httpAction(async (_ctx, req) =>
+    new Response(null, { status: 204, headers: recoverCors(req) })),
+});
+
+/* Retire a sync key and mint its replacement. Behind the /recover origin allowlist
+   rather than the open CORS /sync uses: a capability carries no ambient authority,
+   so /sync is safe to call from anywhere, but this is destructive and has no
+   legitimate cross-origin caller.
+
+   Two authorities are accepted. A Google credential proves account ownership and
+   always wins. Holding the key itself also authorizes rotation — weaker, and it
+   means a leaked key lets an attacker rotate first and lock the owner out, but it
+   is strictly less power than the key already confers, and link-only users have no
+   stronger authority available. It is a real argument for signing in. */
+http.route({
+  path: "/rotate",
+  method: "POST",
+  handler: httpAction(async (ctx, req) => {
+    let body: any;
+    try {
+      body = await req.json();
+    } catch {
+      return recoverJson(req, { error: "invalid json" }, 400);
+    }
+    const { credential = null, key = null } = body || {};
+
+    let subject: string | null = null;
+    if (credential !== null) {
+      try {
+        if (typeof credential !== "string" || !credential) throw new Error("missing credential");
+        const clientId = process.env.GOOGLE_CLIENT_ID;
+        if (!clientId) throw new Error("missing Google client id");
+        const { payload } = await jwtVerify(credential, GOOGLE_JWKS, {
+          algorithms: ["RS256"],
+          issuer: ["https://accounts.google.com", "accounts.google.com"],
+          audience: clientId,
+        });
+        if (typeof payload.sub !== "string" || !payload.sub.trim()) throw new Error("missing subject");
+        subject = `google:${payload.sub}`;
+      } catch {
+        return recoverJson(req, { error: "bad credential" }, 401);
+      }
+    } else if (typeof key !== "string" || !/^[a-f0-9]{32,64}$/.test(key)) {
+      return recoverJson(req, { error: "bad key" }, 400);
+    }
+
+    try {
+      const rotated = await ctx.runMutation(internal.recover.rotate, {
+        subject,
+        oldKey: subject === null ? key : null,
+      });
+      return recoverJson(req, { key: rotated });
+    } catch (err: any) {
+      const message = String(err?.message || "");
+      if (message.includes("key revoked")) return recoverJson(req, { error: "revoked" }, 410);
+      if (message.includes("no key for this account")) {
+        return recoverJson(req, { error: "no key" }, 404);
+      }
+      throw err;
+    }
   }),
 });
 

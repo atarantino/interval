@@ -273,6 +273,14 @@ input[type=search]{flex:1; min-width:200px}
 .sync-label{font-size:11px; font-weight:700; letter-spacing:.07em; text-transform:uppercase; color:var(--ink-muted)}
 .sync-note{margin:0; font-size:12.5px; color:var(--ink-muted); max-width:62ch}
 .sync-line{display:flex; align-items:center; gap:10px; flex-wrap:wrap}
+/* Recessed rather than red: rotation is a considered action, not an alarm, and the
+   consequence lives in the copy where it can be read. */
+.sync-confirm{
+  display:grid; gap:8px; width:100%; padding:12px; border-radius:9px;
+  background:var(--chip-bg); border:1px solid var(--ring);
+}
+.sync-confirm .sync-note{max-width:58ch}
+.sync-confirm strong{color:var(--ink-1)}
 .sync-line .who{color:var(--ink-1); font-weight:600}
 .syncbar .srow{width:100%}
 .syncbar .kofi-nudge{margin-top:0; padding-top:14px; border-top:1px solid var(--grid); font-size:12.5px; color:var(--ink-muted)}
@@ -502,11 +510,17 @@ function adoptFragmentKey(){
   const m = location.hash.match(/^#k=([a-f0-9]{32,64})$/);
   if(!m) return false;
   localStorage.setItem(SYNC_KEY_LS, m[1]);
+  // A pasted link is a live key by assumption; clear any revoked verdict from the
+  // key it replaces so the new one gets a real attempt.
+  if(syncState==='revoked') syncState='off';
   history.replaceState(null,'',location.pathname+location.search);
   return true;
 }
 function pushSoon(){
   if(!syncKey()) return;
+  // The key is gone, not unreachable — retrying can only fail, and every retry
+  // repaints a scary status the user can't act on.
+  if(syncState==='revoked') return;
   syncState='dirty'; paintSync();
   clearTimeout(syncTimer);
   syncTimer = setTimeout(syncNow, 1500);
@@ -572,6 +586,14 @@ async function syncNow(){
     try{
       const res = await fetch(SYNC_URL, {method:'POST', headers:{'Content-Type':'application/json'},
         body: `{"key":${JSON.stringify(key)},"state":${sentSnapshot}}`});
+      // 410 is terminal, unlike every other failure here: this key was rotated away
+      // and no amount of retrying brings it back. Local data is never touched — it
+      // is the only copy this device still has, and it rides across on re-pairing.
+      if(res.status===410){
+        syncState='revoked'; clearTimeout(syncTimer);
+        paintSync(); paintSyncbar();
+        return;
+      }
       if(!res.ok) throw new Error('HTTP '+res.status);
       const serverMerged = migrate((await res.json()).state);
       // merge into *current* state — it may have moved while the request is in flight
@@ -601,7 +623,9 @@ function paintSync(){
     syncState==='ok' ? `Sync ✓` : syncState==='dirty' ? 'Sync …' : 'Sync ⚠';
   el.title = syncState==='off' ? 'Set up cross-device sync' :
     syncState==='ok' ? `Synced ${syncStamp?syncStamp.toLocaleTimeString():''}` :
-    syncState==='dirty' ? 'Changes pending' : 'Sync failed — will retry on next change';
+    syncState==='dirty' ? 'Changes pending' :
+    syncState==='revoked' ? 'Disconnected — the sync link was rotated' :
+    'Sync failed — will retry on next change';
   // Refresh only the status line, so an open panel tracks sync state live without
   // tearing down the Google button iframe or resetting the revealed pairing link.
   const head=document.getElementById('syncHead');
@@ -663,25 +687,57 @@ async function adoptGoogleCredential(response){
   try{
     const email=emailFromGoogleCredential(credential);
     const local = syncKey();
+    // A revoked key can't be flushed to and must not be offered for adoption — this
+    // is the sign-in that *recovers* a rotated-out device, so skip straight to
+    // /recover and let the push afterwards carry the local log into the new key.
+    const revoked = syncState==='revoked';
     // Flush this browser's lineage to its own key before adopting the account key —
     // syncNow() only ever pushes the currently selected key, so anything still local
     // would be stranded under the old one. syncNow() swallows its errors, so check
     // the resulting state rather than relying on it to throw.
-    if(local){
+    if(local && !revoked){
       await syncNow();
       if(syncState==='error') return toast('Could not reach sync — not signing in until this device is caught up');
     }
-    const {key} = await post('/recover', {credential, key:local});
+    const {key} = await post('/recover', {credential, key: revoked ? null : local});
     if(typeof key!=='string' || !/^[a-f0-9]{32,64}$/.test(key)) throw new Error('Bad recovery key');
     if(key !== local){
       if(local) localStorage.setItem('ncsr-sync-key-prev', local);
       localStorage.setItem(SYNC_KEY_LS, key);
     }
+    // Clear the terminal verdict before pushing: it belonged to the key we just
+    // replaced, and leaving it set would keep pushSoon() muted on a live key.
+    if(revoked) syncState='off';
     await syncNow();
     try{ localStorage.setItem(GOOGLE_EMAIL_LS, email); }catch(_){}
     paintSync(); paintSyncbar();
     toast('Signed in — your log is recoverable on any device');
   }catch(_){ toast('Could not sign in — try again'); }
+}
+/* Retire this device's key and adopt its replacement. The server copies the state
+   across and tombstones the old key inside one transaction, so the only thing left
+   to do here is store what comes back — and push, so anything logged locally since
+   the last sync lands under the new key too. */
+async function rotateSyncKey(){
+  const key = syncKey();
+  if(!key) return;
+  try{
+    // Flush first: the old key dies the moment the server responds, and anything
+    // still local would otherwise only exist in this browser.
+    await syncNow();
+    const {key:rotated} = await post('/rotate', {key});
+    if(typeof rotated!=='string' || !/^[a-f0-9]{32,64}$/.test(rotated)) throw new Error('bad key');
+    localStorage.setItem(SYNC_KEY_LS, rotated);
+    syncState='off';
+    await syncNow();
+    // Reveal it once — a link nobody can read is a link nobody can re-pair with.
+    pairLinkShown = true;
+    paintSync(); paintSyncbar();
+    toast('Link rotated — copy the new one to your other devices', {ms:5000});
+  }catch(_){
+    paintSyncbar();
+    toast('Could not rotate the link — nothing changed');
+  }
 }
 async function signOutGoogle(){
   try{
@@ -2017,6 +2073,7 @@ async function runKataFromUI(kid){
    behind it, the link is the no-account door with the loss risk stated plainly. */
 const syncbar = document.getElementById('syncbar');
 let pairLinkShown = false;
+let rotateArmed = false;
 function pairLink(){
   const key = syncKey();
   return location.origin.startsWith('http')
@@ -2030,6 +2087,10 @@ function syncHeadHTML(){
   if(!syncKey()){
     return `<span class="sync-dot"></span><strong>Sync is off</strong>
       <span class="sync-stamp">— this log lives only in this browser</span>`;
+  }
+  if(syncState==='revoked'){
+    return `<span class="sync-dot error"></span><strong>Sync disconnected</strong>
+      <span class="sync-stamp">— this device's link was rotated</span>`;
   }
   const dot = syncState==='ok' ? 'on' : syncState==='dirty' ? 'pending' : syncState==='error' ? 'error' : '';
   const stamp =
@@ -2062,6 +2123,22 @@ function paintSyncbar(){
            <button class="primary" data-syncon>Turn on sync</button>
            <p class="sync-note">You get one secret link to open on your other devices, and the merged log is stored against it. Anyone holding the link has your log, and if you lose it there's no way back in.</p>
          </div>`);
+  } else if(syncState==='revoked'){
+    // The link in localStorage is dead, so showing it — or any action that implies
+    // it still works — would be a lie. Offer only the two real ways back.
+    syncbar.innerHTML = head + `
+      <div class="sync-sec">
+        <div class="sync-label">Reconnect</div>
+        ${showGoogle
+          ? `<div data-google-signin="primary"></div>
+             <p class="sync-note">Signing in picks up the current link for your account and pushes this device's log into it.</p>`
+          : `<p class="sync-note">Open the current pairing link on this device to reconnect.</p>`}
+        <p class="sync-note">Or open the new pairing link here, from a device that already has it.</p>
+      </div>
+      <div class="sync-foot">
+        <button class="ghost" data-syncoff>Turn off sync on this device</button>
+        <span class="sync-note">Nothing logged in this browser has been lost — it is still here, just not syncing.</span>
+      </div>`;
   } else {
     const link = pairLink();
     syncbar.innerHTML = head + `
@@ -2085,6 +2162,18 @@ function paintSyncbar(){
           <button class="iconbtn" data-synccopy>Copy</button>
         </div>
         <p class="sync-note">Open it once on another device and the two logs merge: attempts union, deletions stick, newest deck edit wins. Treat it like a password.</p>
+        ${rotateArmed
+          ? `<div class="sync-confirm">
+               <p class="sync-note"><strong>Rotate this link?</strong> The current one stops working everywhere, immediately. ${email
+                 ? 'Your other devices reconnect on their own the next time you sign in on them.'
+                 : 'Every other device stops syncing until you open the new link on it.'}</p>
+               <p class="sync-note">Your log is carried across untouched. This blocks future access with the old link; it can't undo access someone already had.</p>
+               <div class="srow">
+                 <button class="primary" data-rotate-go>Rotate link</button>
+                 <button class="ghost" data-rotate-cancel>Cancel</button>
+               </div>
+             </div>`
+          : `<button class="ghost" data-rotate>Rotate this link</button>`}
       </div>
       <div class="sync-foot">
         <button class="ghost" data-syncoff>Turn off sync on this device</button>
@@ -2099,6 +2188,7 @@ document.getElementById('syncBtn').addEventListener('click', e=>{
   syncbar.style.display = open ? '' : 'none';
   e.currentTarget.setAttribute('aria-expanded', String(open));
   pairLinkShown = false;
+  rotateArmed = false;
   paintSyncbar();
 });
 syncbar.addEventListener('click', e=>{
@@ -2106,7 +2196,7 @@ syncbar.addEventListener('click', e=>{
     // A fresh random key is nobody's account key, so any stale sign-in has to go with it.
     localStorage.removeItem(GOOGLE_EMAIL_LS);
     localStorage.setItem(SYNC_KEY_LS, newSyncKey());
-    pairLinkShown = false;
+    pairLinkShown = false; rotateArmed = false; syncState='off';
     paintSyncbar(); syncNow(); toast('Sync on — copy the link and open it on your other device');
   } else if(e.target.closest('[data-syncreveal]')){
     const inp=document.getElementById('pairLink'), btn=e.target.closest('[data-syncreveal]');
@@ -2123,13 +2213,19 @@ syncbar.addEventListener('click', e=>{
     };
     if(navigator.clipboard) navigator.clipboard.writeText(real).then(()=>toast('Pairing link copied'), fallback);
     else fallback();
+  } else if(e.target.closest('[data-rotate]')){
+    rotateArmed = true; paintSyncbar();
+  } else if(e.target.closest('[data-rotate-cancel]')){
+    rotateArmed = false; paintSyncbar();
+  } else if(e.target.closest('[data-rotate-go]')){
+    rotateArmed = false; rotateSyncKey();
   } else if(e.target.closest('[data-syncnow]')){
     syncNow(); toast('Syncing…');
   } else if(e.target.closest('[data-syncoff]')){
     // Staying "signed in" with sync off would be a state with no meaning — the account
     // exists only to hand back a sync key — so the one switch turns off both.
     const wasSignedIn = !!googleEmail();
-    localStorage.removeItem(SYNC_KEY_LS); syncState='off'; pairLinkShown=false;
+    localStorage.removeItem(SYNC_KEY_LS); syncState='off'; pairLinkShown=false; rotateArmed=false;
     if(wasSignedIn) signOutGoogle();
     paintSync(); paintSyncbar();
     toast(wasSignedIn ? 'Sync off and signed out — your log stays in this browser'

@@ -56,12 +56,25 @@ const compiledBackend = (await transform(backendSource, {
 })).code;
 const backendExports = {};
 const validator = new Proxy({}, { get: () => () => ({}) });
+// Real class, not a stub: the revoked-key guard throws it, and tests need to tell it
+// apart from an ordinary Error carrying a different failure.
+class ConvexError extends Error {
+  constructor(data) {
+    super(typeof data === "string" ? data : JSON.stringify(data));
+    this.data = data;
+  }
+}
 const backendContext = {
   exports: backendExports,
   module: { exports: backendExports },
   require(specifier) {
-    if (specifier === "./_generated/server") return { mutation: (definition) => definition };
-    if (specifier === "convex/values") return { v: validator };
+    if (specifier === "./_generated/server") {
+      return {
+        mutation: (definition) => definition,
+        internalMutation: (definition) => definition,
+      };
+    }
+    if (specifier === "convex/values") return { v: validator, ConvexError };
     throw new Error(`unexpected backend import: ${specifier}`);
   },
 };

@@ -1,5 +1,5 @@
-import { mutation } from "./_generated/server";
-import { v } from "convex/values";
+import { mutation, internalMutation } from "./_generated/server";
+import { ConvexError, v } from "convex/values";
 
 /* Merge, not overwrite. Two devices can both log attempts before either syncs;
    last-write-wins would silently eat one side's reps. The data model makes real
@@ -132,8 +132,11 @@ export function mergeStates(a: any, b: any) {
 }
 
 /* Delete a key's stored state entirely. Capability-gated like everything else:
-   holding the key is what authorizes removing its data. */
-export const wipe = mutation({
+   holding the key is what authorizes removing its data. Internal, and reached only
+   through the HTTP route — a public mutation is callable by anyone holding the
+   deployment URL, which put destruction on a different footing than every other
+   operation in this model. */
+export const wipe = internalMutation({
   args: { key: v.string() },
   returns: v.boolean(),
   handler: async (ctx, args) => {
@@ -154,6 +157,10 @@ export const push = mutation({
       .query("states")
       .withIndex("by_key", (q) => q.eq("key", args.key))
       .unique();
+    // Must precede the insert path below. An unseen key gets a fresh row, so without
+    // this a device still holding a rotated key would recreate it as an empty state
+    // and report healthy sync while writing somewhere nobody reads.
+    if (row?.revoked) throw new ConvexError({ code: "revoked" });
     const merged = row ? mergeStates(row.state, args.state) : migrateState(args.state);
     if (row) {
       await ctx.db.patch(row._id, { state: merged, updated: Date.now() });

@@ -50,7 +50,7 @@ body{
 }
 a{color:var(--blue); text-decoration:none}
 a:hover{text-decoration:underline}
-.wrap{max-width:880px; margin:0 auto; padding:0 16px 80px}
+.wrap{max-width:880px; margin:0 auto; padding:0 16px 32px}
 header.site{
   display:flex; align-items:center; gap:12px; padding:18px 0 10px; flex-wrap:wrap;
 }
@@ -151,9 +151,17 @@ details.notes .note-body{margin-top:6px; color:var(--ink-2); background:var(--ch
 .history .hdel{visibility:hidden}
 .history .hrow:hover .hdel{visibility:visible}
 .empty{color:var(--ink-muted); font-size:14px; padding:26px 0; text-align:center}
-.sitefoot{margin-top:44px; padding-top:14px; border-top:1px solid var(--grid); text-align:center; font-size:12.5px; color:var(--ink-muted)}
-.sitefoot a{color:var(--ink-2)}
-.sitefoot .credit{display:block; margin-top:7px; line-height:1.55}
+.sitefoot{
+  margin-top:52px; padding-top:20px; border-top:1px solid var(--grid); text-align:center;
+  font-size:12.5px; line-height:1.55; color:var(--ink-muted);
+}
+.sitefoot p{margin:0}
+.sitefoot a{color:var(--ink-2); white-space:nowrap}
+.sitefoot .promise{display:flex; flex-wrap:wrap; justify-content:center; column-gap:.35em; row-gap:3px}
+.sitefoot .list-links{white-space:nowrap}
+.sitefoot .credit{display:grid; gap:3px; max-width:760px; margin:11px auto 0}
+.sitefoot .affiliation{margin-top:2px}
+@media (max-width:560px){.sitefoot .support-separator{display:none}}
 .kofi-nudge{display:block; margin-top:6px; font-size:13px}
 .kofi-nudge a{color:var(--ink-2)}
 /* All-problems view */
@@ -415,14 +423,19 @@ input[type=search]{flex:1; min-width:200px}
   </nav>
   <main id="view"></main>
   <footer class="sitefoot">
-    Free · no accounts · your data stays in your browser · <a href="https://ko-fi.com/adamtarantino" target="_blank" rel="noopener">☕ buy me a coffee</a>
-    <span class="credit">Lists curated by <a href="https://neetcode.io/" target="_blank" rel="noopener">NeetCode / Navdeep Singh</a>
-      (<a href="https://neetcode.io/practice/practice/blind75" target="_blank" rel="noopener">Blind 75</a> ·
-      <a href="https://neetcode.io/practice/practice/neetcode150" target="_blank" rel="noopener">150</a> ·
-      <a href="https://neetcode.io/practice/practice/neetcode250" target="_blank" rel="noopener">250</a>) ·
-      repo drills inspired by <a href="https://github.com/ThePrimeagen/kata-machine" target="_blank" rel="noopener">ThePrimeagen's kata-machine</a>
-      (executed in <a href="https://github.com/atarantino/kata-typescript" target="_blank" rel="noopener">kata-typescript</a>) ·
-      not affiliated with NeetCode or LeetCode</span>
+    <p class="promise">
+      <span>Free · no accounts · your data stays in your browser</span>
+      <span><span class="support-separator">· </span><a href="https://ko-fi.com/adamtarantino" target="_blank" rel="noopener">☕ buy me a coffee</a></span>
+    </p>
+    <div class="credit">
+      <span>Lists curated by <a href="https://neetcode.io/" target="_blank" rel="noopener">NeetCode / Navdeep Singh</a>
+        <span class="list-links">(<a href="https://neetcode.io/practice/practice/blind75" target="_blank" rel="noopener">Blind 75</a> ·
+          <a href="https://neetcode.io/practice/practice/neetcode150" target="_blank" rel="noopener">150</a> ·
+          <a href="https://neetcode.io/practice/practice/neetcode250" target="_blank" rel="noopener">250</a>)</span></span>
+      <span>Repo drills inspired by <a href="https://github.com/ThePrimeagen/kata-machine" target="_blank" rel="noopener">ThePrimeagen's kata-machine</a>
+        (executed in <a href="https://github.com/atarantino/kata-typescript" target="_blank" rel="noopener">kata-typescript</a>)</span>
+      <span class="affiliation">Not affiliated with NeetCode or LeetCode</span>
+    </div>
   </footer>
 </div>
 <div class="toast" id="toast"></div>

@@ -1755,14 +1755,25 @@ function recapCardSVG(d, w, h){
     : Math.max(lh*1.2 + 5*lh, fs*0.8 + gridH) + fs*0.4;
   const winW=w-2*m, winH=bar+fs*1.4+contentH+fs*1.2, winY=(h-winH)/2 - h*0.02;
   let y=winY+bar+fs*1.4, out='';
-  const vx=tx+w*(port?0.30:0.14);
+  const listLabel=d.listLabel.toLowerCase(), charAdvance=fs*0.6;
+  const longest=Math.max(...['streak','today','last 20',listLabel,'attempts'].map(s=>s.length));
+  const labelVx=tx+(longest+2)*charAdvance, vx=port?Math.max(tx+w*0.30,labelVx):labelVx;
   const line=(label,val)=>{ out+=`<text x="${tx}" y="${y}" font-family="${CARD_MONO}" font-size="${fs}" fill="${P.muted}">${label}</text><text x="${vx}" y="${y}" font-family="${CARD_MONO}" font-size="${fs}" fill="${P.ink}">${val}</text>`; y+=lh; };
-  out+=`<text x="${tx}" y="${y}" font-family="${CARD_MONO}" font-size="${fs}" fill="${P.good}">$ ncsr --recap</text>`; y+=lh*1.2;
-  const fb=Math.round(10*d.seen/d.listN);
+  const fb=d.seen?Math.max(1,Math.round(10*d.seen/d.listN)):0;
+  const listLine=label=>{
+    const count=`${d.seen}/${d.listN}`, barGap=Math.max(2,Math.round(gap*0.3)), countGap=2*charAdvance;
+    const textRight=port?m+winW-px:m+winW-px-gridW, available=textRight-vx-count.length*charAdvance-countGap;
+    const barCell=Math.max(4,Math.min(Math.round(fs*0.8),Math.floor((available-9*barGap)/10)));
+    const barW=10*barCell+9*barGap, barY=y-fs*0.42-barCell/2, countX=vx+barW+countGap;
+    out+=`<text x="${tx}" y="${y}" font-family="${CARD_MONO}" font-size="${fs}" fill="${P.muted}">${label}</text>`;
+    for(let i=0;i<10;i++) out+=`<rect x="${vx+i*(barCell+barGap)}" y="${barY}" width="${barCell}" height="${barCell}" rx="${Math.max(2,barCell*0.18)}" fill="${P.ramp[i<fb?4:0]}"/>`;
+    out+=`<text x="${countX}" y="${y}" font-family="${CARD_MONO}" font-size="${fs}" fill="${P.ink}">${count}</text>`; y+=lh;
+  };
+  out+=`<text x="${tx}" y="${y}" font-family="${CARD_MONO}" font-size="${fs}" fill="${P.good}">$ interval --recap</text>`; y+=lh*1.2;
   line('streak', `${d.streak} day${d.streak===1?'':'s'} 🔥`);
   line('today', d.todayN? `${d.todayEmo}  ${d.todayCold}/${d.todayN} cold` : '—');
   line('last 20', `${d.coldRate}% cold`);
-  line(esc(d.listLabel.toLowerCase()), `${'▓'.repeat(fb)}${'░'.repeat(10-fb)}  ${d.seen}/${d.listN}`);
+  listLine(esc(listLabel));
   if(!port) line('attempts', `${d.total} total`);
   let hx, hy;
   if(port){ y+=fs*0.4; hx=tx; hy=y; y+=gridH+lh*1.2; }
@@ -1790,7 +1801,7 @@ function recapCardSVG(d, w, h){
 /* Wordle-style text recap — pastes cleanly anywhere an image can't go */
 function recapText(){
   const d = recapData();
-  const fb = Math.round(10*d.seen/d.listN);
+  const fb = d.seen? Math.max(1, Math.round(10*d.seen/d.listN)) : 0;
   return `Interval — day ${d.streak} 🔥
 ${d.todayN? `${d.todayEmo} ${d.todayCold}/${d.todayN} cold` : '— no reps yet today'}
 ${d.listLabel} ${'▓'.repeat(fb)}${'░'.repeat(10-fb)} ${d.seen}/${d.listN}`;
@@ -1813,7 +1824,7 @@ async function shareRecapCard(){
     cv.getContext('2d').drawImage(img,0,0,w,h);
     const blob = await new Promise(r=>cv.toBlob(r,'image/png'));
     if(!blob) throw new Error('png encode');
-    const file = new File([blob], `ncsr-recap-${todayStr()}.png`, {type:'image/png'});
+    const file = new File([blob], `interval-recap-${todayStr()}.png`, {type:'image/png'});
     if(navigator.canShare && navigator.canShare({files:[file]})){
       try{ await navigator.share({files:[file]}); return; }
       catch(err){ if(err.name==='AbortError') return; /* else fall through to download */ }

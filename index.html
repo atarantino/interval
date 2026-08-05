@@ -242,7 +242,7 @@ input[type=search]{flex:1; min-width:200px}
 .hcell{width:14px; height:14px; border-radius:3px; background:var(--chip-bg)}
 .heat-legend{display:flex; align-items:center; gap:4px; font-size:11.5px; color:var(--ink-muted); margin-bottom:8px}
 .heat-legend .hcell{width:11px;height:11px}
-/* wraps because the shape toggle plus both actions overflow a phone width */
+/* wraps because the shape toggle plus the share button overflow a phone width */
 .sharebar{display:flex; flex-wrap:wrap; align-items:center; justify-content:flex-end; gap:8px; margin:0 0 10px}
 /* Method — reference docs at the app's own scale: one reading column, the same
    type and tables as the rest of the tabs, and one chart that draws the schedule
@@ -1807,20 +1807,6 @@ function recapCardSVG(d, w, h){
 </svg>`;
 }
 
-/* Wordle-style text recap — pastes cleanly anywhere an image can't go */
-function recapText(){
-  const d = recapData();
-  const fb = d.seen? Math.max(1, Math.round(10*d.seen/d.listN)) : 0;
-  return `Interval — day ${d.streak} 🔥
-${d.todayN? `${d.todayEmo} ${d.todayCold}/${d.todayN} cold` : '— no reps yet today'}
-${d.listLabel} ${'▓'.repeat(fb)}${'░'.repeat(10-fb)} ${d.seen}/${d.listN}`;
-}
-
-async function copyRecapText(){
-  try{ await navigator.clipboard.writeText(recapText()); toast('Recap copied'); }
-  catch(err){ toast('Could not copy — clipboard unavailable'); }
-}
-
 function recapPngBlob(w,h){
   const svg=recapCardSVG(recapData(),w,h);
   const svgUrl=URL.createObjectURL(new Blob([svg],{type:'image/svg+xml'}));
@@ -1888,7 +1874,7 @@ function renderStats(){
   let html = `<div class="sharebar"><span class="seg" role="group" aria-label="Recap card shape">
     <button data-cardshape="portrait" class="${cardShape==='portrait'?'on':''}" aria-pressed="${cardShape==='portrait'}">Portrait</button>
     <button data-cardshape="landscape" class="${cardShape==='landscape'?'on':''}" aria-pressed="${cardShape==='landscape'}">Landscape</button>
-  </span><button data-copyrecap>Copy recap</button><button data-sharecard>Share recap ↗</button></div>
+  </span><button data-sharecard>Share recap ↗</button></div>
   <div class="tiles">
     <div class="tile"><div class="tv">${seen}<small> /${info.n}</small></div><div class="tl">${esc(info.label)} attempted</div></div>
     <div class="tile"><div class="tv">${solid}</div><div class="tl">solid in ${esc(info.label)} (≥30d)</div></div>
@@ -2119,7 +2105,6 @@ view.addEventListener('click', e=>{
     return;
   }
   if(e.target.closest('[data-sharecard]')){ shareRecapCard(); return; }
-  if(e.target.closest('[data-copyrecap]')){ copyRecapText(); return; }
   /* ---- recall + katas ---- */
   if(e.target.closest('[data-knew]')){ kataAdding=true; kataEditing=null; render(); return; }
   if(e.target.closest('[data-kseed]')){

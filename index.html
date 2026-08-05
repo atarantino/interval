@@ -7,10 +7,15 @@
 <meta id="metaDescription" name="description" content="Interval — a spaced-repetition trainer for the Blind 75, NeetCode 150, and NeetCode 250.">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚡</text></svg>">
 <style>
+/* Ink runs 1 → 2 → muted, darkest to quietest. --ink-muted carries most of the
+   small type in the app (13px captions, table headers, meta lines), so it has to
+   clear 4.5:1 against --page AND --surface-1 rather than the 3:1 large-text
+   allowance. It is the one ink that can't be shared across themes: the same warm
+   grey that reads as quiet on #0d0d0d is nearly invisible on #f9f9f7. */
 :root{
   color-scheme: light;
   --surface-1:#fcfcfb; --page:#f9f9f7;
-  --ink-1:#0b0b0b; --ink-2:#52514e; --ink-muted:#898781;
+  --ink-1:#0b0b0b; --ink-2:#52514e; --ink-muted:#6b6963;
   --grid:#e1e0d9; --baseline:#c3c2b7; --ring:rgba(11,11,11,0.10);
   --blue:#2a78d6; --blue-soft:#cde2fb; --blue-mid:#86b6ef;
   --seq-100:#cde2fb; --seq-200:#9ec5f4; --seq-350:#5598e7; --seq-500:#256abf; --seq-650:#104281;
@@ -21,7 +26,7 @@
 :root[data-theme="dark"]{
   color-scheme: dark;
   --surface-1:#1a1a19; --page:#0d0d0d;
-  --ink-1:#ffffff; --ink-2:#c3c2b7; --ink-muted:#898781;
+  --ink-1:#ffffff; --ink-2:#c3c2b7; --ink-muted:#9a988f;
   --grid:#2c2c2a; --baseline:#383835; --ring:rgba(255,255,255,0.10);
   --blue:#3987e5; --blue-soft:#184f95; --blue-mid:#1c5cab;
   --seq-100:#0d366b; --seq-200:#104281; --seq-350:#1c5cab; --seq-500:#3987e5; --seq-650:#86b6ef;
@@ -33,7 +38,7 @@
   :root:not([data-theme="light"]){
     color-scheme: dark;
     --surface-1:#1a1a19; --page:#0d0d0d;
-    --ink-1:#ffffff; --ink-2:#c3c2b7; --ink-muted:#898781;
+    --ink-1:#ffffff; --ink-2:#c3c2b7; --ink-muted:#9a988f;
     --grid:#2c2c2a; --baseline:#383835; --ring:rgba(255,255,255,0.10);
     --blue:#3987e5; --blue-soft:#184f95; --blue-mid:#1c5cab;
     --seq-100:#0d366b; --seq-200:#104281; --seq-350:#1c5cab; --seq-500:#3987e5; --seq-650:#86b6ef;

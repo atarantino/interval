@@ -242,7 +242,8 @@ input[type=search]{flex:1; min-width:200px}
 .hcell{width:14px; height:14px; border-radius:3px; background:var(--chip-bg)}
 .heat-legend{display:flex; align-items:center; gap:4px; font-size:11.5px; color:var(--ink-muted); margin-bottom:8px}
 .heat-legend .hcell{width:11px;height:11px}
-.sharebar{display:flex; justify-content:flex-end; gap:8px; margin:0 0 10px}
+/* wraps because the shape toggle plus both actions overflow a phone width */
+.sharebar{display:flex; flex-wrap:wrap; align-items:center; justify-content:flex-end; gap:8px; margin:0 0 10px}
 /* Method — reference docs at the app's own scale: one reading column, the same
    type and tables as the rest of the tabs, and one chart that draws the schedule
    instead of describing it. */
@@ -1713,13 +1714,21 @@ function renderAll(){
    16-week heatmap the Stats tab shows. The card is built as an SVG string
    and rasterized on a canvas, so the export needs no libraries and no
    network — system fonts only. Shares via the Web Share API where file
-   sharing exists (iOS/Android), otherwise downloads the PNG. */
+   sharing exists (iOS/Android), otherwise copies or downloads the PNG. */
 const SHARE_URL = 'intervalreps.vercel.app';
 const CARD_MONO = `ui-monospace,Menlo,Consolas,monospace`;
 /* fixed palette (dark ramp) — the export ignores the viewer's theme */
 const CARD_P = {page:'#0d0d0d', win:'#1a1a19', ink:'#ffffff', muted:'#898781',
   grid:'#2c2c2a', good:'#0ca30c', warn:'#fab219', crit:'#d03b3b',
   ramp:['#262624','#0d366b','#104281','#1c5cab','#3987e5']};
+/* Card shape stays device-local because synced state strips unknown preferences. */
+const CARD_SHAPE_LS = 'ncsr-card-shape';
+
+function recapCardShape(){
+  const saved=localStorage.getItem(CARD_SHAPE_LS);
+  return saved==='portrait'||saved==='landscape' ? saved
+    : (matchMedia('(pointer:coarse)').matches||innerWidth<700 ? 'portrait' : 'landscape');
+}
 
 function recapData(){
   const t = todayStr();
@@ -1812,29 +1821,52 @@ async function copyRecapText(){
   catch(err){ toast('Could not copy — clipboard unavailable'); }
 }
 
+function recapPngBlob(w,h){
+  const svg=recapCardSVG(recapData(),w,h);
+  const svgUrl=URL.createObjectURL(new Blob([svg],{type:'image/svg+xml'}));
+  return new Promise((res,rej)=>{
+    const img=new Image();
+    img.onload=()=>{
+      try{
+        const cv=document.createElement('canvas'); cv.width=w; cv.height=h;
+        cv.getContext('2d').drawImage(img,0,0,w,h);
+        cv.toBlob(blob=>{ URL.revokeObjectURL(svgUrl); blob?res(blob):rej(new Error('png encode')); },'image/png');
+      }catch(err){ URL.revokeObjectURL(svgUrl); rej(err); }
+    };
+    img.onerror=()=>{ URL.revokeObjectURL(svgUrl); rej(new Error('svg render')); };
+    img.src=svgUrl;
+  });
+}
+
 async function shareRecapCard(){
-  const portrait = matchMedia('(pointer:coarse)').matches || innerWidth<700;
+  const portrait=recapCardShape()==='portrait';
   const [w,h] = portrait? [1080,1350] : [1200,675];
-  const svg = recapCardSVG(recapData(), w, h);
-  const svgUrl = URL.createObjectURL(new Blob([svg],{type:'image/svg+xml'}));
-  try{
-    const img = new Image();
-    await new Promise((res,rej)=>{ img.onload=res; img.onerror=()=>rej(new Error('svg render')); img.src=svgUrl; });
-    const cv = document.createElement('canvas'); cv.width=w; cv.height=h;
-    cv.getContext('2d').drawImage(img,0,0,w,h);
-    const blob = await new Promise(r=>cv.toBlob(r,'image/png'));
-    if(!blob) throw new Error('png encode');
-    const file = new File([blob], `interval-recap-${todayStr()}.png`, {type:'image/png'});
-    if(navigator.canShare && navigator.canShare({files:[file]})){
+  const fileName=`interval-recap-${todayStr()}.png`, blobPromise=recapPngBlob(w,h);
+  const hasShare=typeof navigator.share==='function' && typeof navigator.canShare==='function'
+    && navigator.canShare({files:[new File([],fileName,{type:'image/png'})]});
+  const hasClipboard=typeof navigator.clipboard?.write==='function' && typeof ClipboardItem==='function'
+    && (ClipboardItem.supports?.('image/png')??true);
+  if(hasShare){
+    try{
+      const blob=await blobPromise, file=new File([blob],fileName,{type:'image/png'});
       try{ await navigator.share({files:[file]}); return; }
       catch(err){ if(err.name==='AbortError') return; /* else fall through to download */ }
-    }
+    }catch(err){ toast('Could not create the recap image'); return; }
+  }else if(hasClipboard){
+    try{
+      // Safari preserves user activation only when ClipboardItem receives the pending blob.
+      const item=new ClipboardItem({'image/png':blobPromise});
+      await navigator.clipboard.write([item]);
+      toast('Recap image copied'); return;
+    }catch(err){ /* fall through to download */ }
+  }
+  try{
+    const blob=await blobPromise;
     const a=document.createElement('a');
-    a.href=URL.createObjectURL(blob); a.download=file.name; a.click();
+    a.href=URL.createObjectURL(blob); a.download=fileName; a.click();
     setTimeout(()=>URL.revokeObjectURL(a.href), 5000);
     toast('Recap image downloaded');
   }catch(err){ toast('Could not create the recap image'); }
-  finally{ URL.revokeObjectURL(svgUrl); }
 }
 
 function renderStats(){
@@ -1852,7 +1884,11 @@ function renderStats(){
   const mins = state.log.filter(a=>a.m).map(a=>a.m).sort((a,b)=>a-b);
   const med = mins.length? mins[Math.floor(mins.length/2)] : 0;
   const coldRate = (()=>{ const recent=state.log.slice(-20); if(!recent.length)return 0; return Math.round(100*recent.filter(a=>a.r==='cold').length/recent.length); })();
-  let html = `<div class="sharebar"><button data-copyrecap>Copy recap</button><button data-sharecard>Share recap ↗</button></div>
+  const cardShape=recapCardShape();
+  let html = `<div class="sharebar"><span class="seg" role="group" aria-label="Recap card shape">
+    <button data-cardshape="portrait" class="${cardShape==='portrait'?'on':''}" aria-pressed="${cardShape==='portrait'}">Portrait</button>
+    <button data-cardshape="landscape" class="${cardShape==='landscape'?'on':''}" aria-pressed="${cardShape==='landscape'}">Landscape</button>
+  </span><button data-copyrecap>Copy recap</button><button data-sharecard>Share recap ↗</button></div>
   <div class="tiles">
     <div class="tile"><div class="tv">${seen}<small> /${info.n}</small></div><div class="tl">${esc(info.label)} attempted</div></div>
     <div class="tile"><div class="tv">${solid}</div><div class="tl">solid in ${esc(info.label)} (≥30d)</div></div>
@@ -2153,6 +2189,14 @@ view.addEventListener('click', e=>{
     const pref=linkBtn.dataset.linkpref;
     if((pref==='nc'||pref==='lc') && pref!==state.linkPref){
       state.linkPref=pref; touchPref('linkPref'); save(); render();
+    }
+    return;
+  }
+  const shapeBtn=e.target.closest('[data-cardshape]');
+  if(shapeBtn){
+    const shape=shapeBtn.dataset.cardshape;
+    if(shape==='portrait'||shape==='landscape'){
+      localStorage.setItem(CARD_SHAPE_LS,shape); render();
     }
     return;
   }

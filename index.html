@@ -12,6 +12,12 @@
    clear 4.5:1 against --page AND --surface-1 rather than the 3:1 large-text
    allowance. It is the one ink that can't be shared across themes: the same warm
    grey that reads as quiet on #0d0d0d is nearly invisible on #f9f9f7. */
+/* The status colours come in two forms. --good/--warning/--serious/--critical are
+   the fill colours, tuned to read as a dot or a pill against the page. Their
+   --*-text siblings are the same hue pushed far enough for 4.5:1 as small bold
+   type on --chip-bg, which a fill colour never manages: a red that looks right
+   filling a badge is too light to be that badge's label. Use the -text variant
+   whenever the colour lands on glyphs. */
 :root{
   color-scheme: light;
   --surface-1:#fcfcfb; --page:#f9f9f7;
@@ -20,7 +26,7 @@
   --blue:#2a78d6; --blue-soft:#cde2fb; --blue-mid:#86b6ef;
   --seq-100:#cde2fb; --seq-200:#9ec5f4; --seq-350:#5598e7; --seq-500:#256abf; --seq-650:#104281;
   --good:#0ca30c; --warning:#fab219; --serious:#ec835a; --critical:#d03b3b;
-  --good-text:#006300;
+  --good-text:#006300; --critical-text:#b32d2d;
   --chip-bg:#f0efec;
 }
 :root[data-theme="dark"]{
@@ -31,7 +37,7 @@
   --blue:#3987e5; --blue-soft:#184f95; --blue-mid:#1c5cab;
   --seq-100:#0d366b; --seq-200:#104281; --seq-350:#1c5cab; --seq-500:#3987e5; --seq-650:#86b6ef;
   --good:#0ca30c; --warning:#fab219; --serious:#ec835a; --critical:#d03b3b;
-  --good-text:#0ca30c;
+  --good-text:#0ca30c; --critical-text:#ef6f6f;
   --chip-bg:#262624;
 }
 @media (prefers-color-scheme: dark){
@@ -43,7 +49,7 @@
     --blue:#3987e5; --blue-soft:#184f95; --blue-mid:#1c5cab;
     --seq-100:#0d366b; --seq-200:#104281; --seq-350:#1c5cab; --seq-500:#3987e5; --seq-650:#86b6ef;
     --good:#0ca30c; --warning:#fab219; --serious:#ec835a; --critical:#d03b3b;
-    --good-text:#0ca30c;
+    --good-text:#0ca30c; --critical-text:#ef6f6f;
     --chip-bg:#262624;
   }
 }
@@ -113,9 +119,9 @@ h2:first-child{margin-top:0}
 .badge.medium{color:#946200}
 :root[data-theme="dark"] .badge.medium{color:var(--warning)}
 @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) .badge.medium{color:var(--warning)} }
-.badge.hard{color:var(--critical)}
+.badge.hard{color:var(--critical-text)}
 .due-tag{font-size:12.5px; font-weight:600}
-.due-tag.overdue{color:var(--critical)}
+.due-tag.overdue{color:var(--critical-text)}
 .due-tag.today{color:var(--ink-1)}
 .due-tag.later{color:var(--ink-muted); font-weight:500}
 .result-icon{font-size:12.5px; color:var(--ink-2)}
@@ -302,7 +308,9 @@ input[type=search]{flex:1; min-width:200px}
 }
 /* leeches */
 .card.leech{border-color:var(--serious); background:linear-gradient(0deg,var(--surface-1),var(--surface-1))}
-.leech-tag{font-size:11px; font-weight:700; padding:1px 8px; border-radius:999px; background:var(--serious); color:#fff}
+/* --serious is a light fill, so the tag takes dark ink like .kdraft does rather
+   than the white that .cnt.hot can afford on --critical. */
+.leech-tag{font-size:11px; font-weight:700; padding:1px 8px; border-radius:999px; background:var(--serious); color:#43180a}
 .leech-box{margin-top:10px; padding:10px 12px; border-radius:9px; background:var(--chip-bg); font-size:13px; color:var(--ink-2)}
 .leech-box strong{color:var(--ink-1)}
 .leech-box .recall{margin-top:8px}
@@ -317,7 +325,7 @@ input[type=search]{flex:1; min-width:200px}
 .gate button{margin-top:10px}
 /* skip + hints on new problems */
 .skipbtn{font-size:12px; color:var(--ink-muted); background:none; border:none; cursor:pointer; font-family:inherit; padding:2px 6px}
-.skipbtn:hover{color:var(--critical)}
+.skipbtn:hover{color:var(--critical-text)}
 .newpat{font-size:12px; color:var(--blue); font-weight:600}
 .transfer{
   margin-top:10px; padding:10px 12px; border-left:3px solid var(--blue); background:var(--chip-bg);
@@ -429,7 +437,7 @@ input[type=search]{flex:1; min-width:200px}
 .out.pass{border-left:3px solid var(--good)}
 .out.fail{border-left:3px solid var(--critical)}
 .out .ok{color:var(--good-text); font-weight:700}
-.out .err{color:var(--critical); font-weight:700}
+.out .err{color:var(--critical-text); font-weight:700}
 .out table{border-collapse:collapse; font-size:12px}
 .out td,.out th{border:1px solid var(--grid); padding:3px 8px; text-align:left}
 .reveal{margin-top:10px}

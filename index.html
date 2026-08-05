@@ -18,12 +18,18 @@
    type on --chip-bg, which a fill colour never manages: a red that looks right
    filling a badge is too light to be that badge's label. Use the -text variant
    whenever the colour lands on glyphs. */
+/* --blue is the one accent that has to be a link colour AND a button fill, and
+   those pull opposite ways: legible-as-text wants distance from the page,
+   legible-behind-text wants distance from the label. So the label moves instead
+   of the blue. --blue-ink is whatever contrasts with --blue in this theme —
+   white in light, near-black in dark, where the accent sits lighter. Same trick
+   .kdraft and .leech-tag already use on --warning and --serious. */
 :root{
   color-scheme: light;
   --surface-1:#fcfcfb; --page:#f9f9f7;
   --ink-1:#0b0b0b; --ink-2:#52514e; --ink-muted:#6b6963;
   --grid:#e1e0d9; --baseline:#c3c2b7; --ring:rgba(11,11,11,0.10);
-  --blue:#2a78d6; --blue-soft:#cde2fb; --blue-mid:#86b6ef;
+  --blue:#1c6ac9; --blue-soft:#cde2fb; --blue-mid:#86b6ef; --blue-ink:#ffffff;
   --seq-100:#cde2fb; --seq-200:#9ec5f4; --seq-350:#5598e7; --seq-500:#256abf; --seq-650:#104281;
   --good:#0ca30c; --warning:#fab219; --serious:#ec835a; --critical:#d03b3b;
   --good-text:#006300; --critical-text:#b32d2d;
@@ -34,7 +40,7 @@
   --surface-1:#1a1a19; --page:#0d0d0d;
   --ink-1:#ffffff; --ink-2:#c3c2b7; --ink-muted:#9a988f;
   --grid:#2c2c2a; --baseline:#383835; --ring:rgba(255,255,255,0.10);
-  --blue:#3987e5; --blue-soft:#184f95; --blue-mid:#1c5cab;
+  --blue:#4b99e7; --blue-soft:#184f95; --blue-mid:#1c5cab; --blue-ink:#0d0d0d;
   --seq-100:#0d366b; --seq-200:#104281; --seq-350:#1c5cab; --seq-500:#3987e5; --seq-650:#86b6ef;
   --good:#0ca30c; --warning:#fab219; --serious:#ec835a; --critical:#d03b3b;
   --good-text:#0ca30c; --critical-text:#ef6f6f;
@@ -46,7 +52,7 @@
     --surface-1:#1a1a19; --page:#0d0d0d;
     --ink-1:#ffffff; --ink-2:#c3c2b7; --ink-muted:#9a988f;
     --grid:#2c2c2a; --baseline:#383835; --ring:rgba(255,255,255,0.10);
-    --blue:#3987e5; --blue-soft:#184f95; --blue-mid:#1c5cab;
+    --blue:#4b99e7; --blue-soft:#184f95; --blue-mid:#1c5cab; --blue-ink:#0d0d0d;
     --seq-100:#0d366b; --seq-200:#104281; --seq-350:#1c5cab; --seq-500:#3987e5; --seq-650:#86b6ef;
     --good:#0ca30c; --warning:#fab219; --serious:#ec835a; --critical:#d03b3b;
     --good-text:#0ca30c; --critical-text:#ef6f6f;
@@ -146,7 +152,7 @@ input[type=number], input[type=date], input[type=search], textarea{
 input[type=number]{width:90px}
 textarea{flex:1; min-width:220px; min-height:38px; resize:vertical}
 .primary{
-  background:var(--blue); color:#fff; border:none; border-radius:8px; padding:8px 16px;
+  background:var(--blue); color:var(--blue-ink); border:none; border-radius:8px; padding:8px 16px;
   font-family:inherit; font-size:14px; font-weight:600; cursor:pointer;
 }
 .primary:disabled{opacity:.45; cursor:default}

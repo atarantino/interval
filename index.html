@@ -948,6 +948,15 @@ function leechList(){ return allDue().filter(x=>leechInfo(x.p.id)); }
 function unseen(){ return activePool().filter(p=>attemptsFor(p.id).length===0 && !isDismissed(p.id)); }
 function touchedCats(){ return new Set(activePool().filter(p=>attemptsFor(p.id).length>0).map(p=>p.cat)); }
 
+/* First problem in a pattern you've never touched: worked examples beat struggling on
+   first exposure (the expertise-reversal effect kicks in later, not now). This is a fact
+   about the problem, not about the surface it happens to be rendered on — reaching one
+   deliberately from the All list needs the same nudge as meeting it in Up next. */
+function firstOfPattern(p){ return attemptsFor(p.id).length===0 && !touchedCats().has(p.cat); }
+function firstOfPatternHTML(p){
+  return `<div class="leech-box">First problem in <strong>${esc(p.cat)}</strong>. You have no pattern to retrieve yet, so watching the walkthrough first is the efficient move — that's the worked-example effect, not cheating. Log it as ▶ and it comes back tomorrow for a real attempt.</div>`;
+}
+
 /* Interleaved new queue. Rohrer's RCT: practice mixed across patterns beats practice
    blocked by pattern (d≈0.83), because interviews never tell you which pattern applies.
    Problems from patterns you've already met come first — but never two in a row from
@@ -1365,6 +1374,7 @@ function logFormHTML(p, s){
   const otherSite = state.linkPref==='nc' ? 'lc' : 'nc';
   const otherLabel = otherSite==='nc' ? 'NeetCode' : 'LeetCode';
   return `<div class="logform" data-form="${p.id}">
+    ${firstOfPattern(p)?firstOfPatternHTML(p):''}
     <div class="secondary-link">Prefer the other workspace? <a href="${problemUrl(p,otherSite)}" target="_blank" rel="noopener">Open on ${otherLabel} ↗</a></div>
     <div class="result-btns">
       <button class="rbtn" data-res="cold"><span class="rt"><span class="dot cold"></span>⚡ Solved cold</span><span class="rs">no help at all → review in ${pc}d (${nice(addDays(todayStr(),pc))})</span></button>
@@ -1403,9 +1413,7 @@ function probCard(p, s, opts){
            : over===0 ? `<span class="due-tag today">due today</span>`
            : `<span class="due-tag later">due ${nice(s.due)}</span>`;
   }
-  // First problem in a pattern you've never touched: worked examples beat struggling
-  // on first exposure (the expertise-reversal effect kicks in later, not now).
-  const firstOfPattern = opts.isNew && !touchedCats().has(p.cat);
+  const newPattern = firstOfPattern(p);
   const sib = opts.due ? transferSibling(p) : null;
   const lastNote = leech ? [...attemptsFor(p.id)].reverse().find(a=>a.n) : null;
   const solveLabel = state.linkPref==='nc' ? 'NeetCode' : 'LeetCode';
@@ -1416,7 +1424,7 @@ function probCard(p, s, opts){
       <span class="badge ${p.diff.toLowerCase()}">${p.diff}</span>
       <span class="prob-meta">${esc(p.cat)}</span>
       ${leech?`<span class="leech-tag">leech</span>`:''}
-      ${firstOfPattern?`<span class="newpat">new pattern</span>`:''}
+      ${newPattern?`<span class="newpat">new pattern</span>`:''}
       ${s.last?`<span class="result-icon" title="last result">${RICON[s.last.r]} ${RLABEL[s.last.r]} · ${nice(s.last.d)}</span>`:''}
       <span class="spacer"></span>
       ${dueBit}
@@ -1427,7 +1435,8 @@ function probCard(p, s, opts){
       <strong>${leech.bad} of the last 3 attempts needed help.</strong> Another cold attempt will probably fail the same way — the approach hasn't encoded. Reformulate instead: state the key insight in one sentence, out loud, <em>then</em> write the code from that sentence.
       ${lastNote?`<details class="notes" style="margin-top:8px"><summary>Reveal what you wrote last time (try to say it yourself first)</summary><div class="note-body">${esc(lastNote.n)}</div></details>`:''}
     </div>`:''}
-    ${firstOfPattern?`<div class="leech-box">First problem in <strong>${esc(p.cat)}</strong>. You have no pattern to retrieve yet, so watching the walkthrough first is the efficient move — that's the worked-example effect, not cheating. Log it as ▶ and it comes back tomorrow for a real attempt.</div>`:''}
+    ${/* the log form carries this box itself once open, so the card only shows it collapsed */''}
+    ${newPattern&&!open?firstOfPatternHTML(p):''}
     ${sib?`<div class="transfer">
       <strong>Transfer test available.</strong> You've solved this cold twice — re-solving it now mostly tests recognition. Try <strong>${esc(sib.name)}</strong> instead: same pattern, never seen, which is what an interview actually asks of you.
       <div style="margin-top:6px"><button class="linkbtn" data-xopen="${p.id}|${sib.id}">${openTransfers.has(p.id)?'Hide':'Swap in '+esc(sib.name)} </button></div>
@@ -1682,7 +1691,7 @@ function renderAll(){
         const dueTxt = skipped ? 'skipped' : s.n===0 ? '—' : (s.due<=todayStr() ? 'due now' : nice(s.due));
         return `<tr data-row="${p.id}">
           <td class="c-dot"><span class="dot ${s.status==='due'?(s.last?s.last.r:'video'):s.status}" title="${s.status}"></span></td>
-          <td>${esc(p.name)}${leechInfo(p.id)?' <span class="leech-tag">leech</span>':''}${skipped?` <button class="skipbtn" data-unskip="${p.id}" title="Put this back in the queue">un-skip</button>`:''}</td>
+          <td>${esc(p.name)}${leechInfo(p.id)?' <span class="leech-tag">leech</span>':''}${firstOfPattern(p)?' <span class="newpat">new pattern</span>':''}${skipped?` <button class="skipbtn" data-unskip="${p.id}" title="Put this back in the queue">un-skip</button>`:''}</td>
           <td class="c-diff"><span class="badge ${p.diff.toLowerCase()}">${p.diff}</span></td>
           <td class="c-n">${s.n||''}</td>
           <td class="c-due">${dueTxt}</td>

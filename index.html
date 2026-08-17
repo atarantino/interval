@@ -1634,9 +1634,17 @@ function renderToday(){
 
   html += `<h2>Up next — new problems</h2>`;
   if(gated){
+    /* Name the pile honestly: leeches count toward the gate but they aren't reviews, and
+       calling them that made a one-rep nudge read as a wall. Say how many reps actually
+       reopen it, too — at the threshold that's one, of anything, at any result. */
+    const toGo = backlog - NEW_GATE + 1;
+    const waiting = [
+      due.length && `${due.length} review${due.length>1?'s':''}`,
+      leeches.length && `${leeches.length} stuck`,
+    ].filter(Boolean).join(' and ');
     html += `<div class="gate">
-      <strong>New problems paused — ${backlog} reviews are waiting.</strong>
-      <div class="gsub">Anki's rule, and it's the right one: adding new material on top of a backlog just grows the backlog. Clear these down to ${NEW_GATE-1} and the queue reopens by itself.</div>
+      <strong>New problems paused — ${waiting} waiting.</strong>
+      <div class="gsub">Anki's rule, and it's the right one: adding new material on top of a backlog just grows the backlog. Log ${toGo===1?'any one of them':`any ${toGo} of them`}, whatever the outcome, and the queue reopens by itself.</div>
       <button class="iconbtn" data-gate>Add one anyway</button>
     </div>`;
   } else {

@@ -2008,13 +2008,13 @@ function renderAbout(){
   <section>
     <h2>Rules the app enforces for you</h2>
     <div class="method-defs">
-      <div><h3>New problems pause at ${NEW_GATE} due reviews</h3><p>Adding material on top of an overdue pile only grows the pile. The new queue reopens by itself once you've caught up.
-        <span class="cited">(after the <a href="https://docs.ankiweb.net/leeches.html" target="_blank" rel="noopener">Anki manual</a>)</span></p></div>
+      <div><h3>New problems pause at ${NEW_GATE} waiting</h3><p>Reviews and leeches both count, and adding material on top of an overdue pile only grows the pile. The count is recomputed after every log, though, so one attempt at any result reopens the queue.
+        <span class="cited">(backlog policy after the <a href="https://docs.ankiweb.net/deck-options.html" target="_blank" rel="noopener">Anki manual</a>)</span></p></div>
       <div><h3>New problems don't arrive in list order</h3><p>Once ${INTERLEAVE_AFTER} patterns are in play, consecutive additions come from different categories, so the strategy is never announced in advance.
         <span class="cited">(<a href="https://doi.org/10.1037/edu0000367" target="_blank" rel="noopener">Rohrer et al., 2020</a>)</span></p></div>
       <div><h3>The first problem in a pattern comes with a worked example</h3><p>Worked examples beat unguided struggle for a genuine novice. After that first contact the support drops away and retrieval takes over.
         <span class="cited">(the worked-example effect and expertise reversal, <a href="https://doi.org/10.1023/A:1022193728205" target="_blank" rel="noopener">Sweller et al., 1998</a>)</span></p></div>
-      <div><h3>Repeated failures leave the normal queue</h3><p>When 2 of the last 3 attempts needed help, the problem becomes a leech and asks you to re-derive the idea before coding. Two clean solves return it to rotation.
+      <div><h3>Repeated failures leave the normal queue</h3><p>When 2 of the last 3 attempts needed help, the problem becomes a leech and asks you to re-derive the idea before coding. Two clean solves return it to rotation. A deliberately harder trigger than Anki's 8 lapses, and a different remedy: a 30-minute problem is a costlier failure than a flashcard, so this one is rewritten rather than suspended.
         <span class="cited">(leech handling after the <a href="https://docs.ankiweb.net/leeches.html" target="_blank" rel="noopener">Anki manual</a>)</span></p></div>
     </div>
   </section>
@@ -2069,7 +2069,7 @@ function renderAbout(){
     Wozniak, <a href="https://super-memory.com/articles/20rules.htm" target="_blank" rel="noopener"><em>Twenty rules of formulating knowledge</em></a> (minimum information principle) ·
     Overt vs. covert retrieval: Putnam &amp; Roediger (2013), <a href="https://doi.org/10.3758/s13421-012-0245-x" target="_blank" rel="noopener"><em>Does response mode affect amount recalled or the magnitude of the testing effect?</em></a>, Memory &amp; Cognition ·
     Sweller, van Merriënboer &amp; Paas (1998), <a href="https://doi.org/10.1023/A:1022193728205" target="_blank" rel="noopener"><em>Cognitive architecture and instructional design</em></a> — worked-example effect &amp; expertise reversal ·
-    SM-2: <a href="https://super-memory.com/english/ol/sm2.htm" target="_blank" rel="noopener">Wozniak (1990), SuperMemo</a> · leech handling and backlog policy after the <a href="https://docs.ankiweb.net/leeches.html" target="_blank" rel="noopener">Anki manual</a>.
+    SM-2: <a href="https://super-memory.com/english/ol/sm2.htm" target="_blank" rel="noopener">Wozniak (1990), SuperMemo</a> · leech handling after the <a href="https://docs.ankiweb.net/leeches.html" target="_blank" rel="noopener">Anki manual on leeches</a> · backlog policy after the <a href="https://docs.ankiweb.net/deck-options.html" target="_blank" rel="noopener">Anki manual on deck options</a>.
       </div>
     </details>
   </footer>

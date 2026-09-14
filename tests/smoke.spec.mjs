@@ -1,5 +1,48 @@
 import { test, expect, readState, logAttempt, openHistory } from './fixtures.mjs';
 
+test('practice categories stay hidden until revealed without disturbing a draft', async ({ page }) => {
+  await page.goto('/');
+  await page.evaluate(() => {
+    state.log = [
+      { i: 'hint-1', pid: 31, d: addDays(todayStr(), -10), r: 'hints' },
+      { i: 'hint-2', pid: 31, d: addDays(todayStr(), -5), r: 'hints' },
+      { i: 'review-1', pid: 10, d: addDays(todayStr(), -30), r: 'cold' },
+    ];
+    render();
+  });
+  const cards = page.locator('#view .card[data-pid]');
+  expect(await cards.count()).toBeGreaterThanOrEqual(3);
+  for (const card of await cards.all()) {
+    const pid = Number(await card.getAttribute('data-pid'));
+    const category = await page.evaluate(id => PROBLEMS.find(p => p.id === id).cat, pid);
+    await expect(card.locator('[data-category-hint]')).toHaveText('Show category');
+    await expect(card).not.toContainText(category);
+  }
+  const hint = page.locator('[data-category-hint="31"]');
+  await hint.click();
+  await expect(hint).toHaveText('Binary Search');
+  await expect(hint).toHaveAttribute('aria-expanded', 'true');
+  await expect(page.locator('[data-form="31"]')).toHaveCount(0);
+  await expect(page.locator('[data-category-hint="10"]')).toHaveText('Show category');
+  await page.locator('[data-pid="31"] .prob-name').click();
+  const notes = page.locator('[data-form="31"] [data-notes]');
+  await notes.fill('Unsaved approach');
+  await hint.focus();
+  await page.keyboard.press('Enter');
+  await expect(hint).toHaveText('Show category');
+  await expect(hint).toHaveAttribute('aria-expanded', 'false');
+  await page.keyboard.press('Space');
+  await expect(hint).toHaveText('Binary Search');
+  await expect(notes).toHaveValue('Unsaved approach');
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.reload();
+  await expect(page.locator('[data-category-hint][aria-expanded="true"]')).toHaveCount(0);
+  const freshCard = page.locator('#view .card[data-pid]').first();
+  await expect(freshCard.locator('.leech-box')).toContainText('First problem in a new pattern');
+  await page.locator('[data-tab="all"]').click();
+  await expect(page.locator('.cat-name').filter({ hasText: 'Binary Search' })).toBeVisible();
+});
+
 test('All problems launches the selected workspace in a new tab', async ({ page, context }) => {
   // Stub destinations so the test checks navigation without contacting either service.
   await context.route(/^https:\/\/(neetcode\.io|leetcode\.com)\//, route =>

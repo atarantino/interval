@@ -117,6 +117,9 @@ h2:first-child{margin-top:0}
 .prob-head{display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; cursor:pointer}
 .prob-name{font-weight:600; font-size:15px}
 .prob-meta{color:var(--ink-muted); font-size:12.5px}
+.category-hint{background:none; border:0; padding:0; font-family:inherit; cursor:pointer; text-decoration:underline dotted; text-underline-offset:3px}
+.category-hint:hover{color:var(--ink-1)}
+.category-hint:focus-visible{outline:2px solid var(--blue); outline-offset:4px; border-radius:2px}
 .badge{
   display:inline-block; font-size:11px; font-weight:700; padding:1px 8px; border-radius:999px;
   background:var(--chip-bg); color:var(--ink-2); vertical-align:1px;
@@ -955,7 +958,7 @@ function touchedCats(){ return new Set(activePool().filter(p=>attemptsFor(p.id).
    deliberately from the All list needs the same nudge as meeting it in Up next. */
 function firstOfPattern(p){ return attemptsFor(p.id).length===0 && !touchedCats().has(p.cat); }
 function firstOfPatternHTML(p){
-  return `<div class="leech-box">First problem in <strong>${esc(p.cat)}</strong>. You have no pattern to retrieve yet, so watching the walkthrough first is the efficient move — that's the worked-example effect, not cheating. Log it as ▶ and it comes back tomorrow for a real attempt.</div>`;
+  return `<div class="leech-box">First problem in ${activeTab==='today'?'a new pattern':`<strong>${esc(p.cat)}</strong>`}. You have no pattern to retrieve yet, so watching the walkthrough first is the efficient move — that's the worked-example effect, not cheating. Log it as ▶ and it comes back tomorrow for a real attempt.</div>`;
 }
 
 /* Interleaved new queue. Rohrer's RCT: practice mixed across patterns beats practice
@@ -1352,6 +1355,7 @@ function renderOut(res){
 const view = document.getElementById('view');
 let activeTab='today';
 const openForms = new Set();
+const revealedCategories = new Set();
 const openCats = new Set();
 const openTransfers = new Set();      // due pids showing their transfer sibling
 const pendingTransfer = new Map();    // sibling pid -> origin pid, for this session
@@ -1425,7 +1429,7 @@ function probCard(p, s, opts){
     <div class="prob-head" data-toggle="${p.id}">
       <span class="prob-name">${esc(p.name)}</span>
       <span class="badge ${p.diff.toLowerCase()}">${p.diff}</span>
-      <span class="prob-meta">${esc(p.cat)}</span>
+      <button type="button" class="prob-meta category-hint" data-category-hint="${p.id}" aria-expanded="${revealedCategories.has(p.id)}" aria-label="${revealedCategories.has(p.id)?'Hide':'Reveal'} category hint for ${esc(p.name)}">${revealedCategories.has(p.id)?esc(p.cat):'Show category'}</button>
       ${leech?`<span class="leech-tag">leech</span>`:''}
       ${newPattern?`<span class="newpat">new pattern</span>`:''}
       ${s.last?`<span class="result-icon" title="last result">${RICON[s.last.r]} ${RLABEL[s.last.r]} · ${nice(s.last.d)}</span>`:''}
@@ -2115,6 +2119,18 @@ document.getElementById('tabs').addEventListener('click', e=>{
   render();
 });
 view.addEventListener('click', e=>{
+  const categoryHint = e.target.closest('[data-category-hint]');
+  if(categoryHint){
+    const pid = Number(categoryHint.dataset.categoryHint);
+    const p = PROBLEMS.find(p=>p.id===pid);
+    const reveal = !revealedCategories.has(pid);
+    reveal ? revealedCategories.add(pid) : revealedCategories.delete(pid);
+    // Keep focus and any unsaved problem log intact when revealing a hint.
+    categoryHint.textContent = reveal ? p.cat : 'Show category';
+    categoryHint.setAttribute('aria-expanded', String(reveal));
+    categoryHint.setAttribute('aria-label', `${reveal?'Hide':'Reveal'} category hint for ${p.name}`);
+    return;
+  }
   const del = e.target.closest('[data-del]');
   if(del){
     /* The tombstone is the entry's own key, so deleting an id-bearing attempt can

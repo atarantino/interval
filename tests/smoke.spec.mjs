@@ -142,12 +142,12 @@ test('Pareto 49 uses its own problems and order, and keeps outside reviews', asy
 test('Today switches the study list, offers the next list when one runs out, and while paused', async ({ page }) => {
   await page.goto('/');
   const line = page.locator('.listline');
-  await expect(line).toContainText('From NeetCode 150');
+  await expect(line).toContainText('New problems from NeetCode 150');
   await line.locator('[data-listpick]').click();
   await expect(line.locator('[data-listpick]')).toHaveAttribute('aria-expanded', 'true');
   await page.locator('.listpick [data-tier="49"]').click();
   await expect(page.locator('.listpick')).toHaveCount(0);
-  await expect(line).toContainText('From Pareto 49');
+  await expect(line).toContainText('New problems from Pareto 49');
   await expect(page.locator('#listLogo')).toHaveText('Pareto 49');
   expect((await readState(page)).tier).toBe(49);
   const paretoIds = await page.evaluate(() => TIER_INFO[49].ids);
@@ -170,11 +170,13 @@ test('Today switches the study list, offers the next list when one runs out, and
     render();
   });
   await expect(page.locator('.gate')).toBeVisible();
-  await expect(line).toContainText('From Blind 75');
+  await expect(line).toContainText('New problems from Blind 75');
+  // It leads the page, so a long review queue doesn't bury it.
+  await expect(page.locator('#view > :first-child')).toHaveClass('listline');
   await line.locator('[data-listpick]').click();
   await page.locator('.listpick [data-tier="49"]').click();
   expect((await readState(page)).tier).toBe(49);
-  await expect(line).toContainText('From Pareto 49');
+  await expect(line).toContainText('New problems from Pareto 49');
   await expect(page.locator('.gate')).toBeVisible();
   // "Add one anyway" survives a list switch instead of bouncing back to the gate.
   await page.locator('[data-gate]').click();

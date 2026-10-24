@@ -139,7 +139,7 @@ test('Pareto 49 uses its own problems and order, and keeps outside reviews', asy
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
 
-test('Today switches the study list, offers the next list when one runs out, and hides it when paused', async ({ page }) => {
+test('Today switches the study list, offers the next list when one runs out, and while paused', async ({ page }) => {
   await page.goto('/');
   const line = page.locator('.listline');
   await expect(line).toContainText('From NeetCode 150');
@@ -164,14 +164,23 @@ test('Today switches the study list, offers the next list when one runs out, and
   expect((await readState(page)).tier).toBe(75);
   await expect(page.locator('.newlist .card[data-pid]').first()).toBeVisible();
 
-  // While a backlog pauses new problems, switching would change nothing visible.
+  // A review backlog pauses new problems; the list can still be changed for when it reopens.
   await page.evaluate(() => {
-    state.log = PROBLEMS.slice(0, NEW_GATE).map((p, n) => ({ i: `due-${n}`, pid: p.id, d: addDays(todayStr(), -60), r: 'cold' }));
+    state.log = PROBLEMS.slice(0, 14).map((p, n) => ({ i: `due-${n}`, pid: p.id, d: addDays(todayStr(), -60), r: 'cold' }));
     render();
   });
   await expect(page.locator('.gate')).toBeVisible();
-  await expect(line).toHaveCount(0);
+  await expect(line).toContainText('From Blind 75');
+  await line.locator('[data-listpick]').click();
+  await page.locator('.listpick [data-tier="49"]').click();
+  expect((await readState(page)).tier).toBe(49);
+  await expect(line).toContainText('From Pareto 49');
+  await expect(page.locator('.gate')).toBeVisible();
+  // "Add one anyway" survives a list switch instead of bouncing back to the gate.
   await page.locator('[data-gate]').click();
   await expect(page.locator('.newlist')).toBeVisible();
-  await expect(line).toHaveCount(0);
+  await line.locator('[data-listpick]').click();
+  await page.locator('.listpick [data-tier="150"]').click();
+  await expect(page.locator('.gate')).toHaveCount(0);
+  await expect(page.locator('.newlist .card[data-pid]').first()).toBeVisible();
 });

@@ -42,7 +42,7 @@ assert.equal(clientParts.length, wantedVariables.size + wantedFunctions.size,
 
 const clientContext = {};
 vm.runInNewContext(
-  `${clientParts.join("\n")}\nthis.api = { migrate, mergeStates };`,
+  `${clientParts.join("\n")}\nthis.api = { migrate, mergeStates, PROBLEMS, TIER_INFO };`,
   clientContext,
   { filename: "index.inline.merge.js" },
 );
@@ -294,6 +294,7 @@ const mergeFixtures = [
   [kataRelogLeft, kataRelogRight],
   [kataMixedLeft, kataMixedRight],
   [orderingLeft, {}],
+  [{ ...a, tier: 49, prefTs: { ...a.prefTs, tier: 900 } }, b],
 ];
 for (const [left, right] of mergeFixtures) {
   same(
@@ -319,4 +320,23 @@ assert.equal(roundTrip.linkPref, "lc");
 same(backend.mergeStates(roundTrip, incoming), roundTrip);
 pass("tier/linkPref survive a Convex merge round-trip");
 
-console.log("PASS  state merge sanity checks complete (12 groups)");
+// The Pareto 49 is the one list that isn't a `p.tier<=N` prefix, so its IDs are data
+// that a catalog refresh could silently break.
+const pareto = client.TIER_INFO[49];
+assert.equal(pareto.ids.length, 49);
+assert.equal(pareto.n, pareto.ids.length);
+assert.equal(new Set(pareto.ids).size, pareto.ids.length, "Pareto IDs must be unique");
+for (const id of pareto.ids) {
+  const problem = client.PROBLEMS.find((p) => p.id === id);
+  assert.ok(problem && problem.tier <= 150, `Pareto ID ${id} must be a NeetCode 150 problem`);
+}
+assert.equal(client.PROBLEMS.find((p) => p.id === pareto.ids[0]).name, "Contains Duplicate");
+assert.equal(client.PROBLEMS.find((p) => p.id === pareto.ids.at(-1)).name, "Course Schedule II");
+for (const migrateBoth of [client.migrate, backend.migrateState]) {
+  assert.equal(plain(migrateBoth({ log: [], tier: 49 })).tier, 49);
+}
+const paretoChoice = { ...migrated, tier: 49, prefTs: { ...migrated.prefTs, tier: 3_000 } };
+assert.equal(plain(backend.mergeStates(structuredClone(roundTrip), paretoChoice)).tier, 49);
+pass("Pareto 49 IDs resolve, and both migrations and merges keep that list choice");
+
+console.log("PASS  state merge sanity checks complete (13 groups)");

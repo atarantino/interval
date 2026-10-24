@@ -36,7 +36,7 @@ export function migrateState(input: any) {
     .filter((id: any) => Number.isInteger(id) && id >= 1 && id <= 250))]
     .sort((a: any, b: any) => a - b);
   if (!Number.isInteger(st.newPerDay) || st.newPerDay < 1 || st.newPerDay > 20) st.newPerDay = 2;
-  if (![75, 150, 250].includes(st.tier)) st.tier = 150;
+  if (![49, 75, 150, 250].includes(st.tier)) st.tier = 150;
   if (st.linkPref !== "nc" && st.linkPref !== "lc") st.linkPref = "nc";
   if (!Array.isArray(st.katas)) st.katas = [];
   if (!Array.isArray(st.klog)) st.klog = [];

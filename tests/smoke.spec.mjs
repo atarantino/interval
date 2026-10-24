@@ -110,3 +110,31 @@ test('theme and list choice survive reload without horizontal overflow', async (
   await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
+
+test('Pareto 49 uses its own problems and order, and keeps outside reviews', async ({ page }) => {
+  await page.goto('/');
+  // Encode and Decode Strings (6) is in the Blind 75 but not the Pareto 49.
+  await page.evaluate(() => { state.log = [{ i: 'outside-1', pid: 6, d: todayStr(), r: 'cold' }]; save(); render(); });
+  await page.locator('[data-tab="all"]').click();
+  await page.locator('[data-tier="49"]').click();
+  await expect(page.locator('#listLogo')).toHaveText('Pareto 49');
+  await expect(page.locator('#searchBox')).toHaveAttribute('placeholder', /49 problems in Pareto 49/);
+  await expect(page.locator('.cat-block .cat-name')).toHaveText([
+    'Arrays & Hashing', 'Two Pointers', 'Sliding Window', 'Stack', 'Binary Search',
+    'Linked List', 'Trees', 'Heap / Priority Queue', 'Graphs',
+  ]);
+  // The PDF's order, not NeetCode's: Valid Sudoku (8) comes before Product of Array (7).
+  await page.locator('.cat-head[data-cat="Arrays & Hashing"]').click();
+  const rows = page.locator('.cat-block').first().locator('tr[data-row]');
+  await expect(rows).toHaveCount(8);
+  expect(await rows.evaluateAll(trs => trs.map(tr => Number(tr.dataset.row))))
+    .toEqual([1, 2, 3, 4, 5, 8, 7, 9]);
+  await expect(page.locator('.outside-block')).toContainText('Started outside Pareto 49');
+  await expect(page.locator('.outside-block [data-row="6"]')).toBeVisible();
+  await page.reload();
+  expect((await readState(page)).tier).toBe(49);
+  await page.locator('[data-tab="stats"]').click();
+  await expect(page.locator('.tier-progress .bl')).toHaveText(['Pareto 49', 'Blind 75', 'NeetCode 150', 'NeetCode 250']);
+  await expect(page.locator('.tier-progress .bv').first()).toHaveText('0/49');
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+});

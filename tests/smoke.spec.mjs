@@ -138,3 +138,40 @@ test('Pareto 49 uses its own problems and order, and keeps outside reviews', asy
   await expect(page.locator('.tier-progress .bv').first()).toHaveText('0/49');
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
+
+test('Today switches the study list, offers the next list when one runs out, and hides it when paused', async ({ page }) => {
+  await page.goto('/');
+  const line = page.locator('.listline');
+  await expect(line).toContainText('From NeetCode 150');
+  await line.locator('[data-listpick]').click();
+  await expect(line.locator('[data-listpick]')).toHaveAttribute('aria-expanded', 'true');
+  await page.locator('.listpick [data-tier="49"]').click();
+  await expect(page.locator('.listpick')).toHaveCount(0);
+  await expect(line).toContainText('From Pareto 49');
+  await expect(page.locator('#listLogo')).toHaveText('Pareto 49');
+  expect((await readState(page)).tier).toBe(49);
+  const paretoIds = await page.evaluate(() => TIER_INFO[49].ids);
+  const newIds = await page.locator('.newlist .card[data-pid]').evaluateAll(cards => cards.map(c => Number(c.dataset.pid)));
+  expect(newIds.length).toBeGreaterThan(0);
+  for (const id of newIds) expect(paretoIds).toContain(id);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+
+  // Finishing the list offers the next one instead of a dead end.
+  await page.evaluate(() => { state.dismissed = [...TIER_INFO[49].ids]; render(); });
+  const next = page.locator('.newlist [data-tier="75"]');
+  await expect(next).toHaveText('Continue with Blind 75');
+  await next.click();
+  expect((await readState(page)).tier).toBe(75);
+  await expect(page.locator('.newlist .card[data-pid]').first()).toBeVisible();
+
+  // While a backlog pauses new problems, switching would change nothing visible.
+  await page.evaluate(() => {
+    state.log = PROBLEMS.slice(0, NEW_GATE).map((p, n) => ({ i: `due-${n}`, pid: p.id, d: addDays(todayStr(), -60), r: 'cold' }));
+    render();
+  });
+  await expect(page.locator('.gate')).toBeVisible();
+  await expect(line).toHaveCount(0);
+  await page.locator('[data-gate]').click();
+  await expect(page.locator('.newlist')).toBeVisible();
+  await expect(line).toHaveCount(0);
+});

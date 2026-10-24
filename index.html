@@ -220,6 +220,13 @@ input[type=search]{flex:1; min-width:200px}
   font-family:inherit; font-size:12.5px; padding:4px 9px; cursor:pointer;
 }
 .seg button.on{background:var(--surface-1); color:var(--ink-1); font-weight:700; box-shadow:0 1px 3px var(--ring)}
+.listline{font-size:13px; color:var(--ink-muted); margin:-4px 0 8px}
+.listline strong{color:var(--ink-2)}
+.linkbtn{appearance:none; border:0; background:none; padding:0; font:inherit; color:var(--blue); cursor:pointer}
+.linkbtn:hover{text-decoration:underline}
+.linkbtn:focus-visible{outline:2px solid var(--blue); outline-offset:2px; border-radius:2px}
+.listpick{margin:0 0 14px}
+.next-list{margin-top:12px}
 .outside-block{margin-top:24px; padding-top:12px; border-top:1px dashed var(--baseline)}
 .outside-tag{margin-left:6px; font-size:10.5px; color:var(--ink-muted); font-weight:600}
 .tier-progress{display:grid; gap:7px; margin:0 0 24px}
@@ -1376,7 +1383,7 @@ const revealedCategories = new Set();
 const openCats = new Set();
 const openTransfers = new Set();      // due pids showing their transfer sibling
 const pendingTransfer = new Map();    // sibling pid -> origin pid, for this session
-let allFilter='all', search='', gateOverride=false;
+let allFilter='all', search='', gateOverride=false, todayListOpen=false;
 const RLABEL = {cold:'Solved cold', hints:'Needed hints', video:'Watched video'};
 const RICON  = {cold:'⚡', hints:'💡', video:'▶'};
 function esc(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
@@ -1672,12 +1679,29 @@ function renderToday(){
       <button class="iconbtn" data-gate>Add one anyway</button>
     </div>`;
   } else {
+    /* The list only feeds this queue (reviews span every started problem), so the
+       switch lives here. Hidden while the backlog holds new work back, even if "Add one
+       anyway" reopened it: switching resets that override and would bounce you to the gate. */
+    if(backlog < NEW_GATE){
+      html += `<div class="listline">From <strong>${esc(TIER_INFO[state.tier].label)}</strong> ·
+        <button class="linkbtn" data-listpick aria-expanded="${todayListOpen}">change</button></div>`;
+      if(todayListOpen) html += `<div class="listpick">${listPickerHTML()}</div>`;
+    }
     html += `<p class="sub">Mixed across patterns on purpose — interleaved practice beats working a category to completion, because recognising <em>which</em> pattern applies is the skill under test.</p><div class="newlist">`;
+    const next = TIERS[TIERS.indexOf(state.tier)+1];
     html += newProbs.length ? newProbs.map(p=>probCard(p, pstate(p), {isNew:true})).join('')
+      : next ? `<div class="empty">Every ${esc(TIER_INFO[state.tier].label)} problem is started or skipped. Your reviews keep coming either way.
+          <div class="next-list"><button class="iconbtn" data-tier="${next}">Continue with ${esc(TIER_INFO[next].label)}</button></div></div>`
       : `<div class="empty">Nothing left in the queue — every problem is either started or skipped.</div>`;
     html += `</div>`;
   }
   return html;
+}
+
+function listPickerHTML(){
+  return `<span class="seg" role="group" aria-label="Study list">
+      ${TIERS.map(t=>`<button data-tier="${t}" class="${state.tier===t?'on':''}" aria-pressed="${state.tier===t}">${TIER_INFO[t].label}</button>`).join('')}
+    </span>`;
 }
 
 function renderAll(){
@@ -1693,9 +1717,7 @@ function renderAll(){
     return allFilter==='new' ? x.s.status==='new' : x.s.status===allFilter;
   };
   let html = `<div class="prefsbar">
-    <div class="prefgroup"><span class="preflabel">Study list</span><span class="seg" role="group" aria-label="Study list">
-      ${TIERS.map(t=>`<button data-tier="${t}" class="${state.tier===t?'on':''}" aria-pressed="${state.tier===t}">${TIER_INFO[t].label}</button>`).join('')}
-    </span></div>
+    <div class="prefgroup"><span class="preflabel">Study list</span>${listPickerHTML()}</div>
     <div class="prefgroup"><span class="preflabel">Solve on</span><span class="seg" role="group" aria-label="Preferred problem site">
       <button data-linkpref="nc" class="${state.linkPref==='nc'?'on':''}" aria-pressed="${state.linkPref==='nc'}">NeetCode</button>
       <button data-linkpref="lc" class="${state.linkPref==='lc'?'on':''}" aria-pressed="${state.linkPref==='lc'}">LeetCode</button>
@@ -2214,11 +2236,12 @@ view.addEventListener('click', e=>{
     kataOpen.has(id)?kataOpen.delete(id):kataOpen.add(id);
     render(); return;
   }
+  if(e.target.closest('[data-listpick]')){ todayListOpen=!todayListOpen; render(); return; }
   const tierBtn=e.target.closest('[data-tier]');
   if(tierBtn){
     const tier=Number(tierBtn.dataset.tier);
     if(TIER_INFO[tier] && tier!==state.tier){
-      state.tier=tier; touchPref('tier');
+      state.tier=tier; touchPref('tier'); todayListOpen=false;
       pendingTransfer.clear(); openTransfers.clear(); openForms.clear(); gateOverride=false;
       save(); render();
     }

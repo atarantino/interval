@@ -1,6 +1,7 @@
 # Interval
 
 Spaced reps for coding interviews — a local-first spaced-repetition trainer for the
+[Pareto 49](https://www.amanmanazir.com/leetcode),
 [Blind 75](https://neetcode.io/practice/practice/blind75),
 [NeetCode 150](https://neetcode.io/practice/practice/neetcode150), and
 [NeetCode 250](https://neetcode.io/practice/practice/neetcode250), built on spacing-effect
@@ -45,13 +46,17 @@ node scripts/update-neetcode-data.mjs --emit
 
 The script reads NeetCode's current public bundle, preserves IDs 1–150 by LeetCode slug,
 and validates list nesting, category and difficulty totals, slugs, IDs, order, and all
-required fields before it emits the `PROBLEMS` declaration.
+required fields before it emits the `PROBLEMS` declaration. The Pareto 49 is not part of
+that nesting: `TIER_INFO[49].ids` lists its problem IDs (all within 1–150) in the order
+the original PDF gives them.
 
 ## Credits
 
 The problem lists are curated by [NeetCode / Navdeep Singh](https://neetcode.io/).
 NeetCode's videos, courses, and [Pro membership](https://neetcode.io/pro) support the
-original work. The seeded Katas follow
+original work. The Pareto 49 is
+[Aman Manazir's Pareto Problem Set](https://www.amanmanazir.com/leetcode), a shorter
+ordered subset of the NeetCode 150. The seeded Katas follow
 [ThePrimeagen's algorithms course](https://master.dev/courses/algorithms/) and are
 inspired by the [kata-machine](https://github.com/ThePrimeagen/kata-machine) workflow.
 Interval schedules the forms; the public

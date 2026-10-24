@@ -220,7 +220,7 @@ input[type=search]{flex:1; min-width:200px}
   font-family:inherit; font-size:12.5px; padding:4px 9px; cursor:pointer;
 }
 .seg button.on{background:var(--surface-1); color:var(--ink-1); font-weight:700; box-shadow:0 1px 3px var(--ring)}
-.listline{font-size:13px; color:var(--ink-muted); margin:-4px 0 8px}
+.listline{font-size:13px; color:var(--ink-muted); margin:0 0 8px}
 .listline strong{color:var(--ink-2)}
 .linkbtn{appearance:none; border:0; background:none; padding:0; font:inherit; color:var(--blue); cursor:pointer}
 .linkbtn:hover{text-decoration:underline}
@@ -1640,7 +1640,13 @@ function renderToday(){
   const gated = backlog >= NEW_GATE && !gateOverride;
   const newProbs = gated ? [] : newQueue(state.newPerDay||2);
   const doneToday = state.log.filter(a=>a.d===t).length;
-  let html = '';
+  /* First on the page: with a real backlog, Up next sits below every review card. The
+     wording says "new problems" because the list only feeds that queue; reviews span
+     every started problem whatever list is active. Shown even while new work is paused,
+     since the choice decides what comes once the queue reopens. */
+  let html = `<div class="listline">New problems from <strong>${esc(TIER_INFO[state.tier].label)}</strong> ·
+    <button class="linkbtn" data-listpick aria-expanded="${todayListOpen}">change</button></div>`;
+  if(todayListOpen) html += `<div class="listpick">${listPickerHTML()}</div>`;
 
   // Deliberately not gated by the problem backlog: when 10 reviews feel like too much,
   // 90 seconds of atomic recall is still showing up, and the streak stays honest.
@@ -1664,12 +1670,6 @@ function renderToday(){
   html += due.length ? due.map(x=>probCard(x.p,x.s,{due:true})).join('') : `<div class="empty">Review queue is clear 🎉 ${doneToday?`You've logged ${doneToday} attempt${doneToday>1?'s':''} today.`:'Pick up a new problem below.'}${doneToday?`<span class="kofi-nudge">If this trainer is working for you, <a href="https://ko-fi.com/adamtarantino" target="_blank" rel="noopener">buy me a coffee ☕</a></span>`:''}</div>`;
 
   html += `<h2>Up next — new problems</h2>`;
-  /* The list only feeds this queue (reviews span every started problem), so the switch
-     lives here. It shows even while a backlog pauses new problems: that is when most
-     active users look, and the choice decides what comes once the queue reopens. */
-  html += `<div class="listline">From <strong>${esc(TIER_INFO[state.tier].label)}</strong> ·
-    <button class="linkbtn" data-listpick aria-expanded="${todayListOpen}">change</button></div>`;
-  if(todayListOpen) html += `<div class="listpick">${listPickerHTML()}</div>`;
   if(gated){
     /* Name the pile honestly: leeches count toward the gate but they aren't reviews, and
        calling them that made a one-rep nudge read as a wall. Say how many reps actually
